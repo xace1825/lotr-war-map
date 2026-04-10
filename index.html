@@ -475,7 +475,7 @@ const WAYPOINTS = [{"id": "LAST_BRIDGE", "name": "ÐŸÐ¾ÑÐ»ÐµÐ´Ð½Ð
 
 const FACTION_COLORS = {"GONDOR": "#4169E1", "ROHAN": "#228B22", "MORDOR": "#8B0000", "ISENGARD": "#6A0DAD", "HIGH_ELF": "#DAA520", "WOOD_ELF": "#2E8B57", "LOTHLORIEN": "#FFD700", "DOL_GULDUR": "#4B0082", "DALE": "#CD853F", "DUNLAND": "#8B4513", "RHUDAUR": "#696969", "RANGER_NORTH": "#4682B4", "BREE": "#A0522D", "HOBBIT": "#7CFC00", "DORWINION": "#D2691E", "NEAR_HARAD": "#B8860B", "ANGMAR": "#2F4F4F", "GUNDABAD": "#778899", "DURINS_FOLK": "#B8860B", "FANGORN": "#228B22", "BLUE_MOUNTAINS": "#4682B4", "WIND_MOUNTAINS": "#708090", "TAURETHRIM": "#006400", "MORWAITH": "#8B7355", "LOSSOTH": "#ADD8E6", "RED_MOUNTAINS": "#B22222", "HALF_TROLL": "#8B008B", "FACELESS": "#363636", "UTUMNO": "#1C1C1C", "CODERS": "#666", "RIVENDELL": "#DAA520", "BLACK_NUMENOREAN": "#333", "VALINOR": "#FFD700"};
 
-function addWaypointsToMap(map) {
+function addWaypointsToMap(leafletMap) {
     const wpGroup = L.featureGroup();
     
     WAYPOINTS.forEach(wp => {
@@ -503,8 +503,8 @@ function addWaypointsToMap(map) {
         marker.addTo(wpGroup);
     });
     
-    wpGroup.addTo(map);
-    addWaypointsToMap(map);
+    wpGroup.addTo(leafletMap);
+    addWaypointsToMap(leafletMap);
     return wpGroup;
 }
 
@@ -544,7 +544,7 @@ function addWaypointsToMap(map) {
         // State
         let markers = [];
         let editMode = false;
-        let map;
+        let leafletMap;
         let leafletMarkers = {};
         let pendingPopup = null;
         let predefinedMarkers = {}; // Server waypoints (non-deletable)
@@ -560,7 +560,7 @@ function addWaypointsToMap(map) {
         function initMap() {
             // Initialize Leaflet map centered on Middle-earth
             // Using approximate center: lat 0, lng 0 for the tile system
-            map = L.map('map', {
+            leafletMap = L.map('map', {
                 crs: L.CRS.Simple,
                 minZoom: 1,
                 maxZoom: 5,
@@ -570,8 +570,8 @@ function addWaypointsToMap(map) {
             // Move zoom control to top-right
             L.control.zoom({
                 position: 'topright'
-            }).addTo(map);
-    addWaypointsToMap(map);
+            }).addTo(leafletMap);
+    addWaypointsToMap(leafletMap);
 
             // Add tile layer
             L.tileLayer('https://maplotr.enchald.com/tiles/{z}_{x}_{y}.png', {
@@ -579,11 +579,11 @@ function addWaypointsToMap(map) {
                 minZoom: 1,
                 maxZoom: 5,
                 noWrap: true
-            }).addTo(map);
-    addWaypointsToMap(map);
+            }).addTo(leafletMap);
+    addWaypointsToMap(leafletMap);
 
             // Map click handler for edit mode
-            map.on('click', function(e) {
+            leafletMap.on('click', function(e) {
                 if (editMode) {
                     showAddMarkerPopup(e.latlng);
                 }
@@ -673,8 +673,8 @@ function addWaypointsToMap(map) {
             });
 
             const leafletMarker = L.marker([marker.lat, marker.lng], { icon: customIcon })
-                .addTo(map);
-    addWaypointsToMap(map);
+                .addTo(leafletMap);
+    addWaypointsToMap(leafletMap);
 
             // Add popup with marker info
             const popupContent = `
@@ -701,7 +701,7 @@ function addWaypointsToMap(map) {
 
         function deleteMarker(id) {
             if (leafletMarkers[id]) {
-                map.removeLayer(leafletMarkers[id]);
+                leafletMap.removeLayer(leafletMarkers[id]);
                 delete leafletMarkers[id];
             }
             markers = markers.filter(m => m.id !== id);
@@ -713,7 +713,7 @@ function addWaypointsToMap(map) {
             if (markers.length === 0) return;
 
             if (confirm('Вы уверены, что хотите удалить все маркеры?\nПредустановленные маркеры сервера (со звездой ★) не будут удалены.')) {
-                Object.values(leafletMarkers).forEach(m => map.removeLayer(m));
+                Object.values(leafletMarkers).forEach(m => leafletMap.removeLayer(m));
                 leafletMarkers = {};
                 markers = [];
                 saveMarkers();
@@ -764,7 +764,7 @@ function addWaypointsToMap(map) {
         function focusMarker(id) {
             const marker = markers.find(m => m.id === id);
             if (marker && leafletMarkers[id]) {
-                map.setView([marker.lat, marker.lng], 5);
+                leafletMap.setView([marker.lat, marker.lng], 5);
                 leafletMarkers[id].openPopup();
             }
         }
@@ -850,8 +850,8 @@ function addWaypointsToMap(map) {
             });
 
             const leafletMarker = L.marker([marker.lat, marker.lng], { icon: customIcon })
-                .addTo(map);
-    addWaypointsToMap(map);
+                .addTo(leafletMap);
+    addWaypointsToMap(leafletMap);
 
             // Create popup with waypoint info
             const factionName = faction ? faction.name : (marker.faction || 'Нет фракции');
