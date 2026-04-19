@@ -818,6 +818,7 @@
                             iconAnchor: [3, 3]
                         });
                         const m = L.marker(wp.ll, {icon});
+                        m.bindTooltip('<b>'+wp.n+'</b><br>MC: '+wp.mc[0]+', '+wp.mc[1], {direction: 'top', offset: [0, -8]});
                         m.bindPopup('<b style="color:'+c+'">'+wp.n+'</b><br><small>'+wp.f+' · MC: '+wp.mc[0]+', '+wp.mc[1]+'</small><br>'+wp.d);
                         m.addTo(wpGroup);
                     });
