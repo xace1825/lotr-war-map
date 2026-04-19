@@ -813,9 +813,9 @@
                         const c = colors[wp.f] || '#aaa';
                         const icon = L.divIcon({
                             className: 'wp-icon',
-                            html: '<div style="width:10px;height:10px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.8);background:'+c+';box-shadow:0 0 4px '+c+';"></div>',
-                            iconSize: [10, 10],
-                            iconAnchor: [5, 5]
+                            html: '<div style="width:6px;height:6px;border-radius:50%;border:1px solid rgba(255,255,255,0.6);background:'+c+';box-shadow:0 0 3px '+c+';"></div>',
+                            iconSize: [6, 6],
+                            iconAnchor: [3, 3]
                         });
                         const m = L.marker(wp.ll, {icon});
                         m.bindPopup('<b style="color:'+c+'">'+wp.n+'</b><br><small>'+wp.f+' · MC: '+wp.mc[0]+', '+wp.mc[1]+'</small><br>'+wp.d);
@@ -827,6 +827,33 @@
                 .catch(e => console.error('Failed to load waypoints:', e));
         }
         loadWaypoints();
+
+        // === ROADS LOADER ===
+        function loadRoads() {
+            fetch('roads.json')
+                .then(r => r.json())
+                .then(roads => {
+                    const roadGroup = L.featureGroup();
+                    for (const [key, road] of Object.entries(roads)) {
+                        road.paths.forEach(path => {
+                            if (path.length < 2) return;
+                            const polyline = L.polyline(path, {
+                                color: '#c9a227',
+                                weight: 2,
+                                opacity: 0.6,
+                                lineJoin: 'round',
+                                lineCap: 'round'
+                            });
+                            polyline.bindPopup('<b style="color:#c9a227">'+road.name+'</b><br><small>'+key+' · '+path.length+' точек</small>');
+                            polyline.addTo(roadGroup);
+                        });
+                    }
+                    roadGroup.addTo(map);
+                    console.log('Loaded '+Object.keys(roads).length+' roads');
+                })
+                .catch(e => console.error('Failed to load roads:', e));
+        }
+        loadRoads();
 
 </script>
 </body>
