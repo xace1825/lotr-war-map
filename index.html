@@ -851,8 +851,10 @@
                         });
                         const m = L.marker(wp.ll, {icon});
                         m.bindTooltip('<b>'+wp.n+'</b><br>x: '+wp.mc[0]+'<br>y: '+wp.mc[1], {direction: 'top', offset: [0, -8]});
-                        m.bindPopup(createWaypointPopupContent(wp), {maxWidth: 320});
                         m.on('click', function(e) {
+                            // Пересоздаём popup при каждом клике (editMode мог измениться)
+                            m.unbindPopup();
+                            m.bindPopup(createWaypointPopupContent(wp), {maxWidth: 320});
                             m.openPopup();
                         });
                         m.addTo(wpGroup);
