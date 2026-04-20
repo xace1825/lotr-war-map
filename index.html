@@ -617,24 +617,36 @@
 
             // Setup event listeners for popup buttons
             setTimeout(() => {
-                document.getElementById('add-marker-btn')?.addEventListener('click', () => {
-                    const factionId = document.getElementById('marker-faction').value;
-                    const name = isWaypoint ? waypointName : (document.getElementById('marker-name').value.trim() || 'Без названия');
-                    const troops = parseInt(document.getElementById('marker-troops').value) || 0;
+                const addBtn = document.getElementById('add-marker-btn');
+                const cancelBtn = document.getElementById('cancel-marker-btn');
+                
+                console.log('Setting up listeners, addBtn=', !!addBtn, 'cancelBtn=', !!cancelBtn);
+                
+                if (addBtn) {
+                    addBtn.addEventListener('click', () => {
+                        console.log('Add button clicked');
+                        const factionId = document.getElementById('marker-faction').value;
+                        const name = isWaypoint ? waypointName : (document.getElementById('marker-name').value.trim() || 'Без названия');
+                        const troops = parseInt(document.getElementById('marker-troops').value) || 0;
+                        console.log('Adding marker:', factionId, name, troops);
+                        addMarker(latlng, factionId, name, troops);
+                        pendingPopup?.close();
+                        pendingPopup = null;
+                    });
+                }
 
-                    addMarker(latlng, factionId, name, troops);
-                    pendingPopup?.close();
-                    pendingPopup = null;
-                });
-
-                document.getElementById('cancel-marker-btn')?.addEventListener('click', () => {
-                    pendingPopup?.close();
-                    pendingPopup = null;
-                });
+                if (cancelBtn) {
+                    cancelBtn.addEventListener('click', () => {
+                        console.log('Cancel clicked');
+                        pendingPopup?.close();
+                        pendingPopup = null;
+                    });
+                }
             }, 100);
         }
 
         function addMarker(latlng, factionId, name, troops) {
+            console.log('addMarker called with:', {latlng, factionId, name, troops});
             const marker = {
                 id: Date.now().toString(),
                 lat: latlng.lat,
