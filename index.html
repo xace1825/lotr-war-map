@@ -534,6 +534,9 @@
         let map;
         let leafletMarkers = {};
         let pendingPopup = null;
+        
+        // Глобальный доступ к editMode
+        window.editMode = editMode;
 
         // Initialize
         function init() {
@@ -566,34 +569,44 @@
                 noWrap: true
             }).addTo(map);
 
-            // Map click handler for edit mode
-            map.on('click', function(e) {
-                if (editMode) {
-                    showAddMarkerPopup(e.latlng);
-                }
-            });
+            // Map click handler for edit mode - disabled (now using waypoint clicks)
+            // map.on('click', function(e) {
+            //     if (editMode) {
+            //         showAddMarkerPopup(e.latlng);
+            //     }
+            // });
         }
 
-        function showAddMarkerPopup(latlng) {
+        function showAddMarkerPopup(latlng, waypoint = null) {
             const factionOptions = FACTIONS.map(f =>
                 `<option value="${f.id}">${f.name}</option>`
             ).join('');
 
+            const isWaypoint = waypoint !== null;
+            const waypointName = isWaypoint ? waypoint.n : '';
+            const readonlyAttr = isWaypoint ? 'readonly' : '';
+            const nameValue = isWaypoint ? waypointName : '';
+            const title = isWaypoint ? '⚔️ Разместить войска на точке' : '⚔️ Добавить маркер';
+
             const popupContent = `
-                <div class="popup-title">⚔️ Добавить маркер</div>
+                <div class="popup-title">${title}</div>
+                ${isWaypoint ? `<div class="popup-field" style="background:#2a2a4a;padding:8px;border-radius:4px;margin-bottom:10px;">
+                    <label style="color:#c9a227;font-weight:bold;">📍 Точка:</label>
+                    <input type="text" value="${waypointName}" readonly style="width:100%;padding:4px;background:#1a1a2e;color:#e8e8e8;border:none;cursor:default;">
+                </div>` : ''}
                 <div class="popup-field">
                     <label>Фракция:</label>
                     <select id="marker-faction">${factionOptions}</select>
                 </div>
-                <div class="popup-field">
+                ${!isWaypoint ? `<div class="popup-field">
                     <label>Название:</label>
                     <input type="text" id="marker-name" placeholder="Введите название...">
-                </div>
+                </div>` : ''}
                 <div class="popup-field">
                     <label>Количество войск:</label>
                     <input type="number" id="marker-troops" placeholder="0" min="0">
                 </div>
-                <button class="btn-add" id="add-marker-btn">📍 Добавить маркер</button>
+                <button class="btn-add" id="add-marker-btn">📍 Разместить войска</button>
                 <button class="btn-cancel" id="cancel-marker-btn">Отмена</button>
             `;
 
@@ -606,7 +619,7 @@
             setTimeout(() => {
                 document.getElementById('add-marker-btn')?.addEventListener('click', () => {
                     const factionId = document.getElementById('marker-faction').value;
-                    const name = document.getElementById('marker-name').value.trim() || 'Без названия';
+                    const name = isWaypoint ? waypointName : (document.getElementById('marker-name').value.trim() || 'Без названия');
                     const troops = parseInt(document.getElementById('marker-troops').value) || 0;
 
                     addMarker(latlng, factionId, name, troops);
@@ -773,6 +786,7 @@
             // Edit mode toggle
             document.getElementById('edit-toggle').addEventListener('change', (e) => {
                 editMode = e.target.checked;
+                window.editMode = editMode;
                 const indicator = document.getElementById('edit-indicator');
                 indicator.classList.toggle('active', editMode);
 
@@ -809,6 +823,8 @@
                         'UTUMNO':'#1C1C1C'
                     };
                     const wpGroup = L.featureGroup();
+                    // Сохраняем waypoints глобально для доступа при создании маркеров
+                    window.waypoints = data;
                     data.forEach(wp => {
                         const c = colors[wp.f] || '#aaa';
                         const icon = L.divIcon({
@@ -818,8 +834,20 @@
                             iconAnchor: [3, 3]
                         });
                         const m = L.marker(wp.ll, {icon});
-                        m.bindTooltip('<b>'+wp.n+'</b><br>MC: '+wp.mc[0]+', '+wp.mc[1], {direction: 'top', offset: [0, -8]});
-                        m.bindPopup('<b style="color:'+c+'">'+wp.n+'</b><br><small>'+wp.f+' · MC: '+wp.mc[0]+', '+wp.mc[1]+'</small><br>'+wp.d);
+                        m.bindTooltip('<b>'+wp.n+'</b><br>x: '+wp.mc[0]+'<br>y: '+wp.mc[1], {direction: 'top', offset: [0, -8]});
+                        m.bindPopup('<b style="color:'+c+'">'+wp.n+'</b><br><small>'+wp.f+' · x: '+wp.mc[0]+' y: '+wp.mc[1]+'</small><br>'+wp.d);
+                        // Клик по waypoint в режиме редактирования показывает модалку
+                        m.on('click', function(e) {
+                            if (editMode) {
+                                e.originalEvent.stopPropagation();
+                                L.DomEvent.stopPropagation(e);
+                                if (pendingPopup) {
+                                    pendingPopup.close();
+                                    pendingPopup = null;
+                                }
+                                showAddMarkerPopup(wp.ll, wp);
+                            }
+                        });
                         m.addTo(wpGroup);
                     });
                     wpGroup.addTo(map);
