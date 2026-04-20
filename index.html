@@ -7,490 +7,948 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Cinzel', serif;
-            background: #1a1a2e;
+            background: #0d1117;
             color: #e8e8e8;
             overflow: hidden;
         }
 
-        #app {
-            display: flex;
-            height: 100vh;
-        }
+        #app { display: flex; height: 100vh; }
 
-        /* Sidebar */
+        /* === SIDEBAR === */
         #sidebar {
-            width: 320px;
-            background: linear-gradient(180deg, #16213e 0%, #0f0f23 100%);
-            border-right: 2px solid #c9a227;
+            width: 300px;
+            background: #161b22;
+            border-right: 1px solid rgba(201, 162, 39, 0.3);
             display: flex;
             flex-direction: column;
             z-index: 1000;
-            box-shadow: 4px 0 20px rgba(0,0,0,0.5);
+            box-shadow: 4px 0 24px rgba(0,0,0,0.6);
+            transition: transform 0.3s ease, width 0.3s ease;
+            position: relative;
+        }
+
+        #sidebar.collapsed {
+            transform: translateX(-100%);
+            width: 0;
+            overflow: hidden;
         }
 
         #sidebar-header {
-            padding: 20px;
-            background: linear-gradient(180deg, #c9a227 0%, #8b6914 100%);
-            color: #1a1a2e;
-            text-align: center;
+            padding: 16px 20px;
+            background: linear-gradient(135deg, #c9a227 0%, #8b6914 100%);
+            color: #0d1117;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        #sidebar-header h1 {
-            font-size: 1.4rem;
+        #sidebar-header .title-block h1 {
+            font-size: 1.1rem;
             font-weight: 700;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            letter-spacing: 1px;
         }
 
-        #sidebar-header p {
-            font-size: 0.75rem;
-            opacity: 0.8;
-            margin-top: 5px;
+        #sidebar-header .title-block p {
+            font-size: 0.65rem;
+            opacity: 0.7;
+            margin-top: 2px;
         }
 
-        /* Controls */
-        .controls {
-            padding: 15px;
-            border-bottom: 1px solid rgba(201, 162, 39, 0.3);
+        #sidebar-close {
+            background: rgba(0,0,0,0.2);
+            border: none;
+            color: #0d1117;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s ease;
         }
 
+        #sidebar-close:hover { background: rgba(0,0,0,0.4); }
+
+        /* Sidebar sections */
+        .sidebar-section {
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(201, 162, 39, 0.15);
+        }
+
+        .sidebar-section-title {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #c9a227;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sidebar-section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(201, 162, 39, 0.2);
+        }
+
+        /* Toggle switch */
         .toggle-container {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 15px;
         }
 
         .toggle-label {
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             color: #c9a227;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toggle-label .icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background: rgba(201, 162, 39, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
         }
 
         .toggle-switch {
             position: relative;
-            width: 60px;
-            height: 30px;
+            width: 48px;
+            height: 26px;
         }
 
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
 
         .slider {
             position: absolute;
             cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #2d2d4a;
-            transition: 0.3s;
-            border-radius: 30px;
-            border: 2px solid #c9a227;
+            inset: 0;
+            background: #21262d;
+            transition: 0.3s ease;
+            border-radius: 26px;
+            border: 1px solid rgba(201, 162, 39, 0.3);
         }
 
         .slider:before {
             position: absolute;
             content: "";
-            height: 22px;
-            width: 22px;
+            height: 20px;
+            width: 20px;
             left: 2px;
             bottom: 2px;
-            background-color: #c9a227;
-            transition: 0.3s;
+            background: #c9a227;
+            transition: 0.3s ease;
             border-radius: 50%;
         }
 
-        input:checked + .slider {
-            background-color: #c9a227;
-        }
+        input:checked + .slider { background: #c9a227; border-color: #c9a227; }
 
         input:checked + .slider:before {
-            transform: translateX(30px);
-            background-color: #1a1a2e;
+            transform: translateX(22px);
+            background: #0d1117;
         }
 
+        /* Buttons */
         .btn {
             width: 100%;
             padding: 10px;
             margin-top: 10px;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             font-family: 'Cinzel', serif;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
         .btn-clear {
-            background: linear-gradient(180deg, #8b0000 0%, #5c0000 100%);
-            color: #fff;
-            border: 1px solid #ff4444;
+            background: rgba(139, 0, 0, 0.3);
+            color: #ff6b6b;
+            border: 1px solid rgba(255, 68, 68, 0.4);
         }
 
         .btn-clear:hover {
-            background: linear-gradient(180deg, #a00000 0%, #700000 100%);
+            background: rgba(139, 0, 0, 0.5);
+            border-color: #ff4444;
+            box-shadow: 0 0 12px rgba(255, 68, 68, 0.2);
         }
 
-        /* Markers List */
+        /* Faction legend */
+        .legend-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 6px;
+            border-radius: 6px;
+            font-size: 0.6rem;
+            color: #8b949e;
+            transition: background 0.3s ease;
+        }
+
+        .legend-item:hover {
+            background: rgba(201, 162, 39, 0.1);
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* Markers list */
         #markers-list {
             flex: 1;
             overflow-y: auto;
-            padding: 10px;
+            padding: 8px 12px;
         }
 
-        #markers-list::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        #markers-list::-webkit-scrollbar-track {
-            background: #0f0f23;
-        }
-
-        #markers-list::-webkit-scrollbar-thumb {
-            background: #c9a227;
-            border-radius: 3px;
-        }
+        #markers-list::-webkit-scrollbar { width: 4px; }
+        #markers-list::-webkit-scrollbar-track { background: transparent; }
+        #markers-list::-webkit-scrollbar-thumb { background: #c9a227; border-radius: 4px; }
 
         .marker-item {
-            background: rgba(201, 162, 39, 0.1);
-            border: 1px solid rgba(201, 162, 39, 0.3);
+            background: #0d1117;
+            border: 1px solid rgba(201, 162, 39, 0.15);
             border-radius: 8px;
             padding: 12px;
-            margin-bottom: 10px;
-            transition: all 0.3s;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
         }
 
         .marker-item:hover {
-            background: rgba(201, 162, 39, 0.2);
-            transform: translateX(5px);
+            background: #161b22;
+            border-color: rgba(201, 162, 39, 0.4);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transform: translateY(-1px);
         }
 
         .marker-header {
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-bottom: 8px;
-        }
-
-        .faction-icon {
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 0.7rem;
-            text-transform: uppercase;
+            margin-bottom: 6px;
         }
 
         .marker-name {
             flex: 1;
             font-weight: bold;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: #e8e8e8;
         }
 
         .marker-troops {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: #c9a227;
+            font-weight: bold;
         }
 
         .marker-coords {
-            font-size: 0.7rem;
-            color: #888;
+            font-size: 0.65rem;
+            color: #484f58;
         }
 
-        .marker-actions {
-            display: flex;
-            gap: 5px;
+        .marker-troops-list {
             margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(201, 162, 39, 0.1);
         }
 
-        .btn-delete {
-            flex: 1;
-            padding: 6px;
-            background: rgba(139, 0, 0, 0.3);
-            border: 1px solid #ff4444;
-            color: #ff8888;
-            border-radius: 4px;
-            cursor: pointer;
-            font-family: 'Cinzel', serif;
-            font-size: 0.75rem;
-            transition: all 0.3s;
-        }
-
-        .btn-delete:hover {
-            background: rgba(139, 0, 0, 0.6);
-        }
-
-        /* Map */
-        #map {
-            flex: 1;
-            height: 100%;
-        }
-
-        .leaflet-container {
-            background: #02598D !important;
-        }
-
-        /* Leaflet Popup Styling */
-        .leaflet-popup-content-wrapper {
-            background: linear-gradient(180deg, #16213e 0%, #0f0f23 100%);
-            border: 2px solid #c9a227;
-            border-radius: 10px;
-            color: #e8e8e8;
-        }
-
-        .leaflet-popup-tip {
-            background: #c9a227;
-        }
-
-        .leaflet-popup-content {
-            font-family: 'Cinzel', serif;
-            margin: 15px !important;
-            min-width: 250px;
-        }
-
-        .popup-title {
-            color: #c9a227;
-            font-size: 1rem;
-            margin-bottom: 15px;
-            text-align: center;
-            font-weight: 700;
-        }
-
-        .popup-field {
-            margin-bottom: 12px;
-        }
-
-        .popup-field label {
-            display: block;
-            font-size: 0.8rem;
-            color: #c9a227;
-            margin-bottom: 5px;
-        }
-
-        .popup-field select,
-        .popup-field input {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #c9a227;
-            border-radius: 5px;
-            background: #1a1a2e;
-            color: #e8e8e8;
-            font-family: 'Cinzel', serif;
-            font-size: 0.85rem;
-        }
-
-        .popup-field select:focus,
-        .popup-field input:focus {
-            outline: none;
-            border-color: #ffd700;
-            box-shadow: 0 0 10px rgba(201, 162, 39, 0.3);
-        }
-
-        .btn-add {
-            width: 100%;
-            padding: 10px;
-            background: linear-gradient(180deg, #c9a227 0%, #8b6914 100%);
-            border: none;
-            border-radius: 5px;
-            color: #1a1a2e;
-            font-family: 'Cinzel', serif;
-            font-size: 0.9rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .btn-add:hover {
-            background: linear-gradient(180deg, #ffd700 0%, #c9a227 100%);
-            transform: scale(1.02);
-        }
-
-        .btn-cancel {
-            width: 100%;
-            padding: 8px;
-            background: transparent;
-            border: 1px solid #666;
-            border-radius: 5px;
-            color: #888;
-            font-family: 'Cinzel', serif;
-            font-size: 0.8rem;
-            cursor: pointer;
-            margin-top: 8px;
-            transition: all 0.3s;
-        }
-
-        .btn-cancel:hover {
-            border-color: #888;
-            color: #e8e8e8;
-        }
-
-        /* Custom Marker Icons */
-        .custom-marker {
+        .troop-entry {
             display: flex;
             align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            border: 3px solid #c9a227;
-            box-shadow: 0 0 15px rgba(201, 162, 39, 0.5);
-            font-weight: bold;
-            font-size: 0.8rem;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            gap: 6px;
+            padding: 4px 6px;
+            border-radius: 6px;
+            margin-top: 3px;
+            font-size: 0.7rem;
+            transition: background 0.3s ease;
         }
 
-        .custom-marker .troop-count {
-            position: absolute;
-            bottom: -5px;
-            right: -5px;
-            background: #c9a227;
-            color: #1a1a2e;
-            border-radius: 10px;
-            padding: 2px 6px;
-            font-size: 0.65rem;
-            font-weight: bold;
-            border: 2px solid #1a1a2e;
+        .troop-entry:hover { background: rgba(201, 162, 39, 0.08); }
+
+        .troop-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            box-shadow: 0 0 4px currentColor;
+        }
+
+        .troop-name { flex: 1; color: #8b949e; }
+
+        .troop-count { color: #c9a227; font-weight: bold; }
+
+        .marker-actions { display: flex; gap: 6px; margin-top: 8px; }
+
+        .btn-find {
+            flex: 1;
+            padding: 6px;
+            background: rgba(201, 162, 39, 0.1);
+            border: 1px solid rgba(201, 162, 39, 0.3);
+            color: #c9a227;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Cinzel', serif;
+            font-size: 0.7rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-find:hover {
+            background: rgba(201, 162, 39, 0.2);
+            border-color: #c9a227;
         }
 
         /* Empty state */
         .empty-state {
             text-align: center;
             padding: 40px 20px;
-            color: #666;
+            color: #484f58;
         }
 
         .empty-state svg {
-            width: 60px;
-            height: 60px;
-            margin-bottom: 15px;
+            width: 48px;
+            height: 48px;
+            margin-bottom: 12px;
             opacity: 0.3;
         }
 
-        /* Edit mode indicator */
+        .empty-state p { font-size: 0.8rem; }
+
+        .empty-state .hint {
+            font-size: 0.65rem;
+            margin-top: 6px;
+            color: #30363d;
+        }
+
+        /* === HAMBURGER BUTTON === */
+        #hamburger {
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            z-index: 1100;
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: #161b22;
+            border: 1px solid rgba(201, 162, 39, 0.3);
+            color: #c9a227;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+        }
+
+        #hamburger:hover {
+            background: #c9a227;
+            color: #0d1117;
+            border-color: #c9a227;
+        }
+
+        #hamburger.hidden { opacity: 0; pointer-events: none; }
+
+        /* Overlay for mobile */
+        #sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 999;
+            transition: opacity 0.3s ease;
+        }
+
+        #sidebar-overlay.active { display: block; }
+
+        /* === MAP === */
+        #map { flex: 1; height: 100%; }
+
+        .leaflet-container { background: #02598D !important; }
+
+        /* === CUSTOM ZOOM CONTROLS === */
+        .custom-zoom {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 800;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .zoom-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #161b22;
+            border: 1px solid rgba(201, 162, 39, 0.4);
+            color: #c9a227;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+            font-family: 'Cinzel', serif;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            transition: all 0.3s ease;
+        }
+
+        .zoom-btn:hover {
+            background: #c9a227;
+            color: #0d1117;
+            border-color: #c9a227;
+            box-shadow: 0 0 16px rgba(201, 162, 39, 0.3);
+        }
+
+        /* Hide default leaflet zoom */
+        .leaflet-control-zoom { display: none !important; }
+
+        /* === LEAFLET TOOLTIP STYLING === */
+        .leaflet-tooltip {
+            background: #161b22 !important;
+            border: 1px solid rgba(201, 162, 39, 0.5) !important;
+            border-radius: 8px !important;
+            color: #e8e8e8 !important;
+            font-family: 'Cinzel', serif !important;
+            font-size: 0.75rem !important;
+            padding: 8px 12px !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5) !important;
+        }
+
+        .leaflet-tooltip b {
+            color: #c9a227;
+            font-size: 0.8rem;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .leaflet-tooltip .coords-small {
+            color: #484f58;
+            font-size: 0.65rem;
+        }
+
+        .leaflet-tooltip-top:before {
+            border-top-color: #161b22 !important;
+        }
+
+        .leaflet-tooltip-bottom:before {
+            border-bottom-color: #161b22 !important;
+        }
+
+        .leaflet-tooltip-left:before {
+            border-left-color: #161b22 !important;
+        }
+
+        .leaflet-tooltip-right:before {
+            border-right-color: #161b22 !important;
+        }
+
+        /* === LEAFLET POPUP STYLING === */
+        .leaflet-popup-content-wrapper {
+            background: #161b22 !important;
+            border: 1px solid rgba(201, 162, 39, 0.3) !important;
+            border-top: 3px solid #c9a227 !important;
+            border-radius: 8px !important;
+            color: #e8e8e8 !important;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.6) !important;
+            animation: popupFadeIn 0.3s ease !important;
+        }
+
+        @keyframes popupFadeIn {
+            from { opacity: 0; transform: translateY(8px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .leaflet-popup-tip {
+            background: #161b22 !important;
+            border: 1px solid rgba(201, 162, 39, 0.3) !important;
+            box-shadow: none !important;
+        }
+
+        .leaflet-popup-content {
+            font-family: 'Cinzel', serif !important;
+            margin: 14px 16px !important;
+            min-width: 240px;
+        }
+
+        .leaflet-popup-close-button {
+            color: #c9a227 !important;
+            font-size: 20px !important;
+            padding: 6px 8px 0 0 !important;
+        }
+
+        .leaflet-popup-close-button:hover {
+            color: #ffd700 !important;
+        }
+
+        /* Popup inner styles */
+        .popup-title {
+            color: #c9a227;
+            font-size: 1rem;
+            margin-bottom: 12px;
+            text-align: center;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .popup-field { margin-bottom: 10px; }
+
+        .popup-field label {
+            display: block;
+            font-size: 0.75rem;
+            color: #c9a227;
+            margin-bottom: 4px;
+        }
+
+        .popup-field select,
+        .popup-field input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid rgba(201, 162, 39, 0.3);
+            border-radius: 8px;
+            background: #0d1117;
+            color: #e8e8e8;
+            font-family: 'Cinzel', serif;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .popup-field select:focus,
+        .popup-field input:focus {
+            outline: none;
+            border-color: #c9a227;
+            box-shadow: 0 0 12px rgba(201, 162, 39, 0.2);
+        }
+
+        .btn-add {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #c9a227 0%, #8b6914 100%);
+            border: none;
+            border-radius: 8px;
+            color: #0d1117;
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-add:hover {
+            background: linear-gradient(135deg, #ffd700 0%, #c9a227 100%);
+            transform: scale(1.02);
+            box-shadow: 0 4px 16px rgba(201, 162, 39, 0.3);
+        }
+
+        .btn-cancel {
+            width: 100%;
+            padding: 8px;
+            background: transparent;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            color: #484f58;
+            font-family: 'Cinzel', serif;
+            font-size: 0.75rem;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-cancel:hover {
+            border-color: #484f58;
+            color: #8b949e;
+        }
+
+        /* === WAYPOINT MARKERS === */
+        .wp-icon { background: none !important; border: none !important; }
+
+        .wp-dot {
+            position: relative;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.5);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .wp-dot:hover {
+            transform: scale(1.8);
+            border-color: #c9a227;
+        }
+
+        .wp-badge {
+            position: absolute;
+            bottom: -8px;
+            right: -8px;
+            background: linear-gradient(135deg, #c9a227, #8b6914);
+            color: #0d1117;
+            border-radius: 8px;
+            padding: 1px 5px;
+            font-size: 0.55rem;
+            font-weight: bold;
+            border: 2px solid #161b22;
+            min-width: 18px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        }
+
+        /* Pulse animation for hovered waypoints */
+        @keyframes wpPulse {
+            0%, 100% { box-shadow: 0 0 4px currentColor; }
+            50% { box-shadow: 0 0 12px currentColor, 0 0 20px currentColor; }
+        }
+
+        .wp-dot:hover {
+            animation: wpPulse 1s ease infinite;
+        }
+
+        /* === ROADS GLOW === */
+        .leaflet-overlay-pane svg path {
+            filter: drop-shadow(0 0 3px rgba(201, 162, 39, 0.4));
+        }
+
+        /* === EDIT INDICATOR === */
         .edit-indicator {
             position: fixed;
-            top: 10px;
-            right: 10px;
-            background: linear-gradient(180deg, #c9a227 0%, #8b6914 100%);
-            color: #1a1a2e;
-            padding: 10px 20px;
-            border-radius: 25px;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #c9a227 0%, #8b6914 100%);
+            color: #0d1117;
+            padding: 8px 20px;
+            border-radius: 20px;
             font-weight: 700;
+            font-size: 0.8rem;
             z-index: 2000;
-            box-shadow: 0 0 20px rgba(201, 162, 39, 0.5);
+            box-shadow: 0 4px 20px rgba(201, 162, 39, 0.4);
             display: none;
+            letter-spacing: 0.5px;
         }
 
         .edit-indicator.active {
-            display: block;
-            animation: pulse 2s infinite;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: editPulse 2s infinite;
         }
 
-        @keyframes pulse {
-            0%, 100% { box-shadow: 0 0 20px rgba(201, 162, 39, 0.5); }
-            50% { box-shadow: 0 0 30px rgba(201, 162, 39, 0.8); }
+        @keyframes editPulse {
+            0%, 100% { box-shadow: 0 4px 20px rgba(201, 162, 39, 0.4); }
+            50% { box-shadow: 0 4px 30px rgba(201, 162, 39, 0.7); }
         }
 
-        /* Faction colors for markers */
-        .faction-gondor { background: linear-gradient(135deg, #1e3a5f 0%, #0d1b2a 100%); }
-        .faction-rohan { background: linear-gradient(135deg, #2d5016 0%, #1a3009 100%); }
-        .faction-mordor { background: linear-gradient(135deg, #4a0e0e 0%, #1a0404 100%); }
-        .faction-isengard { background: linear-gradient(135deg, #2d2d2d 0%, #0f0f0f 100%); }
-        .faction-high-elf { background: linear-gradient(135deg, #4a4a8a 0%, #1a1a3a 100%); }
-        .faction-wood-elf { background: linear-gradient(135deg, #3d5c2e 0%, #1a2d14 100%); }
-        .faction-lothlorien { background: linear-gradient(135deg, #d4a574 0%, #8b6914 100%); }
-        .faction-dol-guldur { background: linear-gradient(135deg, #2d1a4a 0%, #0f081a 100%); }
-        .faction-dale { background: linear-gradient(135deg, #5c4a1e 0%, #2d250f 100%); }
-        .faction-dunland { background: linear-gradient(135deg, #4a3a2a 0%, #1a1510 100%); }
-        .faction-rhudaur { background: linear-gradient(135deg, #3a3a4a 0%, #15151a 100%); }
-        .faction-ranger-north { background: linear-gradient(135deg, #2a3a3a 0%, #101515 100%); }
-        .faction-bree { background: linear-gradient(135deg, #5c5c3a 0%, #2d2d1a 100%); }
-        .faction-hobbit { background: linear-gradient(135deg, #4a5c2a 0%, #1a2d10 100%); }
-        .faction-dorwinion { background: linear-gradient(135deg, #5c2a4a 0%, #2d101a 100%); }
-        .faction-near-harad { background: linear-gradient(135deg, #8b4a1a 0%, #4a250d 100%); }
-        .faction-angmar { background: linear-gradient(135deg, #3a3a5c 0%, #15152d 100%); }
-        .faction-gundabad { background: linear-gradient(135deg, #4a4a3a 0%, #1a1a15 100%); }
-        .faction-durins-folk { background: linear-gradient(135deg, #5c5c5c 0%, #2d2d2d 100%); }
-        .faction-fangorn { background: linear-gradient(135deg, #2d4a2a 0%, #102d10 100%); }
+        /* Edit indicator dot */
+        .edit-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #0d1117;
+            animation: editDotPulse 1s infinite;
+        }
+
+        @keyframes editDotPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* === RESPONSIVE === */
+        @media (max-width: 768px) {
+            #sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                z-index: 1001;
+                width: 280px;
+            }
+
+            #sidebar.collapsed {
+                transform: translateX(-100%);
+            }
+
+            #sidebar-overlay.active { display: block; }
+        }
+
+        /* === POPUP INTERNAL TROOP LIST === */
+        .popup-troop-entry {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: #0d1117;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        .popup-troop-entry:hover {
+            border-color: rgba(201, 162, 39, 0.2);
+        }
+
+        .popup-troop-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .popup-troop-name {
+            flex: 1;
+            font-size: 0.8rem;
+            color: #8b949e;
+        }
+
+        .popup-troop-count {
+            color: #c9a227;
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+
+        .popup-troop-delete {
+            background: rgba(139, 0, 0, 0.3);
+            border: 1px solid rgba(255, 68, 68, 0.3);
+            color: #ff6b6b;
+            border-radius: 6px;
+            padding: 3px 8px;
+            font-size: 0.65rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .popup-troop-delete:hover {
+            background: rgba(139, 0, 0, 0.6);
+            border-color: #ff4444;
+        }
+
+        .popup-section-title {
+            color: #c9a227;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .popup-divider {
+            border: none;
+            border-top: 1px solid rgba(201, 162, 39, 0.15);
+            margin: 12px 0;
+        }
+
+        .popup-coords {
+            color: #484f58;
+            font-size: 0.7rem;
+            margin-bottom: 6px;
+        }
+
+        .popup-faction {
+            color: #484f58;
+            font-size: 0.65rem;
+            margin-bottom: 4px;
+        }
+
+        .popup-desc {
+            font-size: 0.75rem;
+            line-height: 1.5;
+            color: #8b949e;
+        }
+
+        .popup-no-troops {
+            padding: 10px;
+            background: #0d1117;
+            border-radius: 8px;
+            text-align: center;
+            color: #484f58;
+            font-size: 0.75rem;
+        }
+
+        /* Popup add form */
+        .popup-add-form select,
+        .popup-add-form input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid rgba(201, 162, 39, 0.3);
+            border-radius: 8px;
+            background: #0d1117;
+            color: #e8e8e8;
+            font-family: 'Cinzel', serif;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .popup-add-form select:focus,
+        .popup-add-form input:focus {
+            outline: none;
+            border-color: #c9a227;
+            box-shadow: 0 0 12px rgba(201, 162, 39, 0.2);
+        }
+
+        .popup-add-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .popup-add-row input { flex: 1; }
+
+        .popup-add-btn {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #c9a227, #8b6914);
+            border: none;
+            border-radius: 8px;
+            color: #0d1117;
+            font-family: 'Cinzel', serif;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .popup-add-btn:hover {
+            background: linear-gradient(135deg, #ffd700, #c9a227);
+            box-shadow: 0 4px 12px rgba(201, 162, 39, 0.3);
+        }
     </style>
 </head>
 <body>
     <div id="app">
+        <!-- Hamburger button -->
+        <button id="hamburger" class="hidden" onclick="toggleSidebar()">&#9776;</button>
+
+        <!-- Sidebar overlay (mobile) -->
+        <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+        <!-- Sidebar -->
         <div id="sidebar">
             <div id="sidebar-header">
-                <h1>🗺️ Карта Средиземья</h1>
-                <p>Enchald LOTR Server</p>
+                <div class="title-block">
+                    <h1>Карта Средиземья</h1>
+                    <p>Enchald LOTR Server</p>
+                </div>
+                <button id="sidebar-close" onclick="toggleSidebar()">&times;</button>
             </div>
-            <div class="controls">
+
+            <!-- Section: Управление -->
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Управление</div>
                 <div class="toggle-container">
-                    <span class="toggle-label">Режим редактирования</span>
+                    <span class="toggle-label">
+                        <span class="icon">&#9998;</span>
+                        Редактирование
+                    </span>
                     <label class="toggle-switch">
                         <input type="checkbox" id="edit-toggle">
                         <span class="slider"></span>
                     </label>
                 </div>
-                <button class="btn btn-clear" id="clear-all-btn">🗑️ Очистить все маркеры</button>
+                <button class="btn btn-clear" id="clear-all-btn">&#128465; Очистить всё</button>
+            </div>
+
+            <!-- Section: Фракции -->
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Фракции</div>
+                <div class="legend-grid" id="faction-legend"></div>
+            </div>
+
+            <!-- Section: Войска -->
+            <div class="sidebar-section" style="padding-bottom: 6px;">
+                <div class="sidebar-section-title">Войска</div>
             </div>
             <div id="markers-list">
                 <div class="empty-state">
                     <svg viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
                     </svg>
-                    <p>Нет маркеров</p>
-                    <p style="font-size: 0.8rem; margin-top: 5px;">Включите режим редактирования и кликните на карту</p>
+                    <p>Нет войск</p>
+                    <p class="hint">Включите редактирование и кликните на точку</p>
                 </div>
             </div>
         </div>
+
         <div id="map"></div>
     </div>
-    <div class="edit-indicator" id="edit-indicator">✏️ Режим редактирования</div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+    <!-- Edit mode indicator -->
+    <div class="edit-indicator" id="edit-indicator">
+        <div class="edit-dot"></div>
+        Режим редактирования
+    </div>
 
-</script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // Faction data
         const FACTIONS = [
-            { id: 'GONDOR', name: 'Гондор', color: '#1e3a5f' },
-            { id: 'ROHAN', name: 'Рохан', color: '#2d5016' },
-            { id: 'MORDOR', name: 'Мордор', color: '#4a0e0e' },
-            { id: 'ISENGARD', name: 'Изенгард', color: '#2d2d2d' },
-            { id: 'HIGH_ELF', name: 'Высшие эльфы', color: '#4a4a8a' },
-            { id: 'WOOD_ELF', name: 'Лесное королевство', color: '#3d5c2e' },
-            { id: 'LOTHLORIEN', name: 'Лотлориэн', color: '#c9a227' },
-            { id: 'DOL_GULDUR', name: 'Дол Гулдур', color: '#2d1a4a' },
-            { id: 'DALE', name: 'Дейл', color: '#5c4a1e' },
-            { id: 'DUNLAND', name: 'Дунланд', color: '#4a3a2a' },
-            { id: 'RHUDAUR', name: 'Рудаур', color: '#3a3a4a' },
-            { id: 'RANGER_NORTH', name: 'Арнор', color: '#2a3a3a' },
-            { id: 'BREE', name: 'Бри', color: '#5c5c3a' },
-            { id: 'HOBBIT', name: 'Хоббиты', color: '#4a5c2a' },
-            { id: 'DORWINION', name: 'Дорвинион', color: '#5c2a4a' },
-            { id: 'NEAR_HARAD', name: 'Ближний Харад', color: '#8b4a1a' },
-            { id: 'ANGMAR', name: 'Ангмар', color: '#3a3a5c' },
-            { id: 'GUNDABAD', name: 'Гундабад', color: '#4a4a3a' },
-            { id: 'DURINS_FOLK', name: 'Народ Дурина', color: '#5c5c5c' },
-            { id: 'FANGORN', name: 'Фангорн', color: '#2d4a2a' }
+            { id: 'GONDOR', name: 'Гондор', color: '#4169E1' },
+            { id: 'ROHAN', name: 'Рохан', color: '#228B22' },
+            { id: 'MORDOR', name: 'Мордор', color: '#8B0000' },
+            { id: 'ISENGARD', name: 'Изенгард', color: '#6A0DAD' },
+            { id: 'HIGH_ELF', name: 'Высшие эльфы', color: '#DAA520' },
+            { id: 'WOOD_ELF', name: 'Лесное кор-во', color: '#2E8B57' },
+            { id: 'LOTHLORIEN', name: 'Лотлориэн', color: '#FFD700' },
+            { id: 'DOL_GULDUR', name: 'Дол Гулдур', color: '#4B0082' },
+            { id: 'DALE', name: 'Дейл', color: '#CD853F' },
+            { id: 'DUNLAND', name: 'Дунланд', color: '#8B4513' },
+            { id: 'RHUDAUR', name: 'Рудаур', color: '#696969' },
+            { id: 'RANGER_NORTH', name: 'Арнор', color: '#4682B4' },
+            { id: 'BREE', name: 'Бри', color: '#A0522D' },
+            { id: 'HOBBIT', name: 'Хоббиты', color: '#7CFC00' },
+            { id: 'DORWINION', name: 'Дорвинион', color: '#D2691E' },
+            { id: 'NEAR_HARAD', name: 'Бл. Харад', color: '#B8860B' },
+            { id: 'ANGMAR', name: 'Ангмар', color: '#2F4F4F' },
+            { id: 'GUNDABAD', name: 'Гундабад', color: '#778899' },
+            { id: 'DURINS_FOLK', name: 'Дурин', color: '#B8860B' },
+            { id: 'FANGORN', name: 'Фангорн', color: '#228B22' }
         ];
 
-        // Minecraft to Tile conversion
-        // Assuming Minecraft world is mapped to tiles at zoom 3
-        // Center of Middle-earth approximately at Minecraft coords 32000, -16000
+        // Faction color map (used for waypoint markers)
+        const FACTION_COLORS = {
+            'GONDOR':'#4169E1','ROHAN':'#228B22','MORDOR':'#8B0000','ISENGARD':'#6A0DAD',
+            'HIGH_ELF':'#DAA520','WOOD_ELF':'#2E8B57','LOTHLORIEN':'#FFD700',
+            'DOL_GULDUR':'#4B0082','DALE':'#CD853F','DUNLAND':'#8B4513',
+            'RHUDAUR':'#696969','RANGER_NORTH':'#4682B4','BREE':'#A0522D',
+            'HOBBIT':'#7CFC00','DORWINION':'#D2691E','NEAR_HARAD':'#B8860B',
+            'ANGMAR':'#2F4F4F','GUNDABAD':'#778899','DURINS_FOLK':'#B8860B',
+            'FANGORN':'#228B22','BLUE_MOUNTAINS':'#4682B4','WIND_MOUNTAINS':'#708090',
+            'TAURETHRIM':'#006400','MORWAITH':'#8B7355','LOSSOTH':'#ADD8E6',
+            'RED_MOUNTAINS':'#B22222','HALF_TROLL':'#8B008B','FACELESS':'#363636',
+            'UTUMNO':'#1C1C1C'
+        };
+
         const MC_CENTER_X = 32000;
         const MC_CENTER_Y = -16000;
-        const MC_SCALE = 0.0001; // Scale factor for conversion
+        const MC_SCALE = 0.0001;
 
         // State
         let editMode = false;
@@ -498,19 +956,28 @@
         let troopsData = {};
         let waypointMarkers = {};
 
-        // Глобальный доступ к editMode и waypoints
         window.editMode = editMode;
         window.waypoints = null;
 
-        // Initialize
+        // === SIDEBAR TOGGLE ===
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const hamburger = document.getElementById('hamburger');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('collapsed');
+            hamburger.classList.toggle('hidden', !sidebar.classList.contains('collapsed'));
+            overlay.classList.toggle('active', !sidebar.classList.contains('collapsed'));
+        }
+
+        // === INIT ===
         function init() {
             initMap();
             loadTroops();
             setupEventListeners();
+            buildFactionLegend();
         }
 
         function initMap() {
-            // Initialize Leaflet map centered on Middle-earth
             map = L.map('map', {
                 crs: L.CRS.Simple,
                 minZoom: 1,
@@ -518,12 +985,15 @@
                 zoomControl: false
             }).setView([-51.90625, 88.28125], 4);
 
-            // Move zoom control to top-right
-            L.control.zoom({
-                position: 'topright'
-            }).addTo(map);
+            // Custom zoom controls
+            const zoomDiv = document.createElement('div');
+            zoomDiv.className = 'custom-zoom';
+            zoomDiv.innerHTML = `
+                <button class="zoom-btn" onclick="map.zoomIn()" title="Приблизить">+</button>
+                <button class="zoom-btn" onclick="map.zoomOut()" title="Отдалить">&minus;</button>
+            `;
+            document.getElementById('map').appendChild(zoomDiv);
 
-            // Add tile layer
             L.tileLayer('https://maplotr.enchald.com/tiles/{z}_{x}_{y}.png', {
                 attribution: 'Enchald LOTR Server',
                 minZoom: 1,
@@ -532,7 +1002,17 @@
             }).addTo(map);
         }
 
-        // Troops storage functions
+        function buildFactionLegend() {
+            const container = document.getElementById('faction-legend');
+            container.innerHTML = FACTIONS.map(f =>
+                `<div class="legend-item">
+                    <span class="legend-dot" style="background:${f.color};box-shadow:0 0 4px ${f.color};"></span>
+                    ${f.name}
+                </div>`
+            ).join('');
+        }
+
+        // === TROOPS STORAGE ===
         function loadTroops() {
             const saved = localStorage.getItem('lotr-troops');
             if (saved) {
@@ -592,7 +1072,6 @@
 
         function clearAllTroops() {
             if (Object.keys(troopsData).length === 0) return;
-
             if (confirm('Вы уверены, что хотите удалить все войска?')) {
                 troopsData = {};
                 saveTroops();
@@ -607,42 +1086,32 @@
             }
         }
 
-        // Update waypoint markers with badges
+        // === WAYPOINT MARKERS WITH BADGES ===
+        function createWaypointIcon(wp) {
+            const c = FACTION_COLORS[wp.f] || '#aaa';
+            const totalTroops = getTotalTroopsForWaypoint(wp.n);
+            const badgeHtml = totalTroops > 0
+                ? `<div class="wp-badge">${formatTroops(totalTroops)}</div>`
+                : '';
+            return L.divIcon({
+                className: 'wp-icon',
+                html: `<div class="wp-dot" style="background:${c};box-shadow:0 0 6px ${c};color:${c};">${badgeHtml}</div>`,
+                iconSize: [8, 8],
+                iconAnchor: [4, 4]
+            });
+        }
+
         function updateWaypointBadges() {
             if (!window.waypoints) return;
-
             window.waypoints.forEach(wp => {
                 const marker = waypointMarkers[wp.n];
                 if (marker) {
-                    const totalTroops = getTotalTroopsForWaypoint(wp.n);
-                    const colors = {
-                        'GONDOR':'#4169E1','ROHAN':'#228B22','MORDOR':'#8B0000','ISENGARD':'#6A0DAD',
-                        'HIGH_ELF':'#DAA520','WOOD_ELF':'#2E8B57','LOTHLORIEN':'#FFD700',
-                        'DOL_GULDUR':'#4B0082','DALE':'#CD853F','DUNLAND':'#8B4513',
-                        'RHUDAUR':'#696969','RANGER_NORTH':'#4682B4','BREE':'#A0522D',
-                        'HOBBIT':'#7CFC00','DORWINION':'#D2691E','NEAR_HARAD':'#B8860B',
-                        'ANGMAR':'#2F4F4F','GUNDABAD':'#778899','DURINS_FOLK':'#B8860B',
-                        'FANGORN':'#228B22','BLUE_MOUNTAINS':'#4682B4','WIND_MOUNTAINS':'#708090',
-                        'TAURETHRIM':'#006400','MORWAITH':'#8B7355','LOSSOTH':'#ADD8E6',
-                        'RED_MOUNTAINS':'#B22222','HALF_TROLL':'#8B008B','FACELESS':'#363636',
-                        'UTUMNO':'#1C1C1C'
-                    };
-                    const c = colors[wp.f] || '#aaa';
-                    const badgeHtml = totalTroops > 0
-                        ? `<div style="position:absolute;bottom:-6px;right:-6px;background:#c9a227;color:#1a1a2e;border-radius:10px;padding:2px 6px;font-size:0.6rem;font-weight:bold;border:2px solid #0f0f23;min-width:16px;text-align:center;">${formatTroops(totalTroops)}</div>`
-                        : '';
-                    const icon = L.divIcon({
-                        className: 'wp-icon',
-                        html: '<div style="position:relative;width:6px;height:6px;border-radius:50%;border:1px solid rgba(255,255,255,0.6);background:'+c+';box-shadow:0 0 3px '+c+';">' + badgeHtml + '</div>',
-                        iconSize: [6, 6],
-                        iconAnchor: [3, 3]
-                    });
-                    marker.setIcon(icon);
+                    marker.setIcon(createWaypointIcon(wp));
                 }
             });
         }
 
-        // Update sidebar with troops per point
+        // === SIDEBAR UPDATE ===
         function updateSidebar() {
             const container = document.getElementById('markers-list');
             const pointsWithTroops = Object.entries(troopsData);
@@ -654,9 +1123,8 @@
                             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
                         </svg>
                         <p>Нет войск</p>
-                        <p style="font-size: 0.8rem; margin-top: 5px;">Включите режим редактирования и кликните на точку</p>
-                    </div>
-                `;
+                        <p class="hint">Включите редактирование и кликните на точку</p>
+                    </div>`;
                 return;
             }
 
@@ -666,58 +1134,48 @@
 
                 const troopsList = troops.map(t => {
                     const faction = FACTIONS.find(f => f.id === t.factionId);
-                    return `<div style="display:flex;align-items:center;gap:6px;margin-top:4px;font-size:0.75rem;">
-                        <span style="width:10px;height:10px;border-radius:50%;background:${faction?.color || '#aaa'};"></span>
-                        <span style="flex:1;">${faction?.name || t.factionId}</span>
-                        <span style="color:#c9a227;font-weight:bold;">${formatTroops(t.troops)}</span>
+                    return `<div class="troop-entry">
+                        <span class="troop-dot" style="background:${faction?.color || '#aaa'};color:${faction?.color || '#aaa'};"></span>
+                        <span class="troop-name">${faction?.name || t.factionId}</span>
+                        <span class="troop-count">${formatTroops(t.troops)}</span>
                     </div>`;
                 }).join('');
 
                 return `
                     <div class="marker-item" data-point="${pointName}">
                         <div class="marker-header">
-                            <div class="marker-name" style="font-size:0.85rem;">${pointName}</div>
-                            <div class="marker-troops">⚔️ ${formatTroops(totalTroops)}</div>
+                            <div class="marker-name">${pointName}</div>
+                            <div class="marker-troops">${formatTroops(totalTroops)}</div>
                         </div>
                         <div class="marker-coords">
-                            ${wp ? `📍 x: ${wp.mc[0]} y: ${wp.mc[1]}` : ''}
+                            ${wp ? `x: ${wp.mc[0]} &middot; y: ${wp.mc[1]}` : ''}
                         </div>
-                        <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(201,162,39,0.2);">
-                            ${troopsList}
-                        </div>
+                        <div class="marker-troops-list">${troopsList}</div>
                         <div class="marker-actions">
-                            <button class="btn-delete" onclick="focusWaypoint('${pointName}')">👁️ Найти</button>
+                            <button class="btn-find" onclick="focusWaypoint('${pointName}')">&#128065; Найти на карте</button>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             }).join('');
         }
 
+        // === EVENT LISTENERS ===
         function setupEventListeners() {
-            // Edit mode toggle
             document.getElementById('edit-toggle').addEventListener('change', (e) => {
                 editMode = e.target.checked;
                 window.editMode = editMode;
-                const indicator = document.getElementById('edit-indicator');
-                indicator.classList.toggle('active', editMode);
-
-                // Change cursor based on mode
+                document.getElementById('edit-indicator').classList.toggle('active', editMode);
                 document.getElementById('map').style.cursor = editMode ? 'crosshair' : 'grab';
-
-                // Refresh waypoints to update popup content for edit mode
                 refreshWaypointPopups();
             });
 
-            // Clear all button
             document.getElementById('clear-all-btn').addEventListener('click', clearAllTroops);
 
-            // Make functions globally available
             window.focusWaypoint = focusWaypoint;
             window.removeTroopsAtPoint = removeTroopsAtPoint;
             window.addTroopsAtPoint = addTroopsAtPoint;
         }
 
-        // Add troops from waypoint popup (edit mode)
+        // === POPUP CONTENT ===
         function addTroopsAtPoint(waypointName) {
             const factionId = document.getElementById('add-troops-faction').value;
             const troopsCount = parseInt(document.getElementById('add-troops-count').value) || 0;
@@ -727,13 +1185,11 @@
             }
         }
 
-        // Remove troops from waypoint popup (edit mode)
         function removeTroopsAtPoint(waypointName, factionId) {
             removeTroops(waypointName, factionId);
             refreshWaypointPopups();
         }
 
-        // Refresh all waypoint popups after troops change
         function refreshWaypointPopups() {
             if (!window.waypoints) return;
             window.waypoints.forEach(wp => {
@@ -744,61 +1200,40 @@
             });
         }
 
-        // Create waypoint popup content
         function createWaypointPopupContent(wp) {
             const troops = getWaypointTroops(wp.n);
-            const totalTroops = troops.reduce((sum, t) => sum + t.troops, 0);
+            const c = FACTION_COLORS[wp.f] || '#aaa';
 
-            const colors = {
-                'GONDOR':'#4169E1','ROHAN':'#228B22','MORDOR':'#8B0000','ISENGARD':'#6A0DAD',
-                'HIGH_ELF':'#DAA520','WOOD_ELF':'#2E8B57','LOTHLORIEN':'#FFD700',
-                'DOL_GULDUR':'#4B0082','DALE':'#CD853F','DUNLAND':'#8B4513',
-                'RHUDAUR':'#696969','RANGER_NORTH':'#4682B4','BREE':'#A0522D',
-                'HOBBIT':'#7CFC00','DORWINION':'#D2691E','NEAR_HARAD':'#B8860B',
-                'ANGMAR':'#2F4F4F','GUNDABAD':'#778899','DURINS_FOLK':'#B8860B',
-                'FANGORN':'#228B22','BLUE_MOUNTAINS':'#4682B4','WIND_MOUNTAINS':'#708090',
-                'TAURETHRIM':'#006400','MORWAITH':'#8B7355','LOSSOTH':'#ADD8E6',
-                'RED_MOUNTAINS':'#B22222','HALF_TROLL':'#8B008B','FACELESS':'#363636',
-                'UTUMNO':'#1C1C1C'
-            };
-            const c = colors[wp.f] || '#aaa';
-
-            // Build troops list
+            // Troops list
             let troopsHtml = '';
             if (troops.length > 0) {
-                troopsHtml = '<div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(201,162,39,0.3);">';
-                troopsHtml += '<div style="color:#c9a227;font-weight:bold;margin-bottom:8px;font-size:0.85rem;">⚔️ Войска на точке:</div>';
-                troops.forEach(t => {
+                troopsHtml = troops.map(t => {
                     const faction = FACTIONS.find(f => f.id === t.factionId);
                     const deleteBtn = editMode
-                        ? `<button onclick="removeTroopsAtPoint('${wp.n}', '${t.factionId}')" style="background:rgba(139,0,0,0.4);border:1px solid #ff4444;color:#ff8888;border-radius:3px;padding:2px 6px;font-size:0.7rem;cursor:pointer;float:right;">🗑️</button>`
+                        ? `<button class="popup-troop-delete" onclick="removeTroopsAtPoint('${wp.n}', '${t.factionId}')">Удалить</button>`
                         : '';
-                    troopsHtml += `
-                        <div style="display:flex;align-items:center;gap:8px;padding:6px;background:rgba(26,26,46,0.5);border-radius:4px;margin-bottom:6px;">
-                            <span style="width:12px;height:12px;border-radius:50%;background:${faction?.color || '#aaa'};border:1px solid rgba(255,255,255,0.3);"></span>
-                            <span style="flex:1;font-size:0.85rem;">${faction?.name || t.factionId}</span>
-                            <span style="color:#c9a227;font-weight:bold;">${formatTroops(t.troops)}</span>
-                            ${deleteBtn}
-                        </div>
-                    `;
-                });
-                troopsHtml += '</div>';
+                    return `<div class="popup-troop-entry">
+                        <span class="popup-troop-dot" style="background:${faction?.color || '#aaa'};"></span>
+                        <span class="popup-troop-name">${faction?.name || t.factionId}</span>
+                        <span class="popup-troop-count">${formatTroops(t.troops)}</span>
+                        ${deleteBtn}
+                    </div>`;
+                }).join('');
             } else {
-                troopsHtml = '<div style="margin-top:12px;padding:8px;background:rgba(26,26,46,0.5);border-radius:4px;text-align:center;color:#666;font-size:0.8rem;">Нет войск</div>';
+                troopsHtml = '<div class="popup-no-troops">Нет войск</div>';
             }
 
-            // Add troops form (only in edit mode)
+            // Add form (edit mode only)
             const addFormHtml = editMode ? `
-                <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(201,162,39,0.3);">
-                    <div style="color:#c9a227;font-weight:bold;margin-bottom:8px;font-size:0.85rem;">➕ Добавить войска:</div>
-                    <div style="margin-bottom:8px;">
-                        <select id="add-troops-faction" style="width:100%;padding:6px;border:1px solid #c9a227;border-radius:4px;background:#1a1a2e;color:#e8e8e8;font-family:'Cinzel',serif;font-size:0.8rem;">
-                            ${FACTIONS.map(f => `<option value="${f.id}">${f.name}</option>`).join('')}
-                        </select>
-                    </div>
-                    <div style="display:flex;gap:8px;">
-                        <input type="number" id="add-troops-count" placeholder="Количество" min="1" style="flex:1;padding:6px;border:1px solid #c9a227;border-radius:4px;background:#1a1a2e;color:#e8e8e8;font-family:'Cinzel',serif;font-size:0.8rem;">
-                        <button onclick="addTroopsAtPoint('${wp.n}')" style="flex:1;padding:6px;background:linear-gradient(180deg,#c9a227 0%,#8b6914 100%);border:none;border-radius:4px;color:#1a1a2e;font-family:'Cinzel',serif;font-size:0.8rem;font-weight:700;cursor:pointer;">Добавить</button>
+                <hr class="popup-divider">
+                <div class="popup-section-title">&#10133; Добавить войска:</div>
+                <div class="popup-add-form">
+                    <select id="add-troops-faction">
+                        ${FACTIONS.map(f => `<option value="${f.id}">${f.name}</option>`).join('')}
+                    </select>
+                    <div class="popup-add-row">
+                        <input type="number" id="add-troops-count" placeholder="Кол-во" min="1">
+                        <button class="popup-add-btn" onclick="addTroopsAtPoint('${wp.n}')">Добавить</button>
                     </div>
                 </div>
             ` : '';
@@ -806,10 +1241,12 @@
             return `
                 <div class="popup-title" style="color:${c};">${wp.n}</div>
                 <div style="text-align:center;">
-                    <div style="color:#888;font-size:0.75rem;margin-bottom:4px;">${wp.f}</div>
-                    <div style="font-size:0.8rem;color:#666;margin-bottom:8px;">x: ${wp.mc[0]} | y: ${wp.mc[1]}</div>
-                    <div style="font-size:0.85rem;line-height:1.4;color:#ccc;">${wp.d}</div>
+                    <div class="popup-faction">${wp.f}</div>
+                    <div class="popup-coords">x: ${wp.mc[0]} | y: ${wp.mc[1]}</div>
+                    <div class="popup-desc">${wp.d}</div>
                 </div>
+                <hr class="popup-divider">
+                <div class="popup-section-title">&#9876; Войска на точке:</div>
                 ${troopsHtml}
                 ${addFormHtml}
             `;
@@ -817,42 +1254,22 @@
 
         // Start
         init();
-    
+
         // === WAYPOINTS LOADER ===
         function loadWaypoints() {
             fetch('waypoints.json')
                 .then(r => r.json())
                 .then(data => {
-                    const colors = {
-                        'GONDOR':'#4169E1','ROHAN':'#228B22','MORDOR':'#8B0000','ISENGARD':'#6A0DAD',
-                        'HIGH_ELF':'#DAA520','WOOD_ELF':'#2E8B57','LOTHLORIEN':'#FFD700',
-                        'DOL_GULDUR':'#4B0082','DALE':'#CD853F','DUNLAND':'#8B4513',
-                        'RHUDAUR':'#696969','RANGER_NORTH':'#4682B4','BREE':'#A0522D',
-                        'HOBBIT':'#7CFC00','DORWINION':'#D2691E','NEAR_HARAD':'#B8860B',
-                        'ANGMAR':'#2F4F4F','GUNDABAD':'#778899','DURINS_FOLK':'#B8860B',
-                        'FANGORN':'#228B22','BLUE_MOUNTAINS':'#4682B4','WIND_MOUNTAINS':'#708090',
-                        'TAURETHRIM':'#006400','MORWAITH':'#8B7355','LOSSOTH':'#ADD8E6',
-                        'RED_MOUNTAINS':'#B22222','HALF_TROLL':'#8B008B','FACELESS':'#363636',
-                        'UTUMNO':'#1C1C1C'
-                    };
                     const wpGroup = L.featureGroup();
                     window.waypoints = data;
                     data.forEach(wp => {
-                        const c = colors[wp.f] || '#aaa';
-                        const totalTroops = getTotalTroopsForWaypoint(wp.n);
-                        const badgeHtml = totalTroops > 0
-                            ? `<div style="position:absolute;bottom:-6px;right:-6px;background:#c9a227;color:#1a1a2e;border-radius:10px;padding:2px 6px;font-size:0.6rem;font-weight:bold;border:2px solid #0f0f23;min-width:16px;text-align:center;">${formatTroops(totalTroops)}</div>`
-                            : '';
-                        const icon = L.divIcon({
-                            className: 'wp-icon',
-                            html: '<div style="position:relative;width:6px;height:6px;border-radius:50%;border:1px solid rgba(255,255,255,0.6);background:'+c+';box-shadow:0 0 3px '+c+';">' + badgeHtml + '</div>',
-                            iconSize: [6, 6],
-                            iconAnchor: [3, 3]
-                        });
+                        const icon = createWaypointIcon(wp);
                         const m = L.marker(wp.ll, {icon});
-                        m.bindTooltip('<b>'+wp.n+'</b><br>x: '+wp.mc[0]+'<br>y: '+wp.mc[1], {direction: 'top', offset: [0, -8]});
-                        m.on('click', function(e) {
-                            // Пересоздаём popup при каждом клике (editMode мог измениться)
+                        m.bindTooltip(
+                            `<b>${wp.n}</b><span class="coords-small">x: ${wp.mc[0]} &middot; y: ${wp.mc[1]}</span>`,
+                            {direction: 'top', offset: [0, -10]}
+                        );
+                        m.on('click', function() {
                             m.unbindPopup();
                             m.bindPopup(createWaypointPopupContent(wp), {maxWidth: 320});
                             m.openPopup();
@@ -861,7 +1278,7 @@
                         waypointMarkers[wp.n] = m;
                     });
                     wpGroup.addTo(map);
-                    console.log('Loaded '+data.length+' waypoints');
+                    console.log('Loaded ' + data.length + ' waypoints');
                 })
                 .catch(e => console.error('Failed to load waypoints:', e));
         }
@@ -876,24 +1293,34 @@
                     for (const [key, road] of Object.entries(roads)) {
                         road.paths.forEach(path => {
                             if (path.length < 2) return;
+                            // Shadow/glow layer
+                            const glow = L.polyline(path, {
+                                color: '#c9a227',
+                                weight: 6,
+                                opacity: 0.15,
+                                lineJoin: 'round',
+                                lineCap: 'round',
+                                interactive: false
+                            });
+                            glow.addTo(roadGroup);
+                            // Main road line
                             const polyline = L.polyline(path, {
                                 color: '#c9a227',
                                 weight: 2,
-                                opacity: 0.6,
+                                opacity: 0.7,
                                 lineJoin: 'round',
                                 lineCap: 'round'
                             });
-                            polyline.bindPopup('<b style="color:#c9a227">'+road.name+'</b><br><small>'+key+' · '+path.length+' точек</small>');
+                            polyline.bindPopup(`<b style="color:#c9a227">${road.name}</b><br><small>${key} &middot; ${path.length} точек</small>`);
                             polyline.addTo(roadGroup);
                         });
                     }
                     roadGroup.addTo(map);
-                    console.log('Loaded '+Object.keys(roads).length+' roads');
+                    console.log('Loaded ' + Object.keys(roads).length + ' roads');
                 })
                 .catch(e => console.error('Failed to load roads:', e));
         }
         loadRoads();
-
-</script>
+    </script>
 </body>
 </html>
