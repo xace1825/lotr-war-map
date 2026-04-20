@@ -630,7 +630,7 @@
                         const troops = parseInt(document.getElementById('marker-troops').value) || 0;
                         console.log('Adding marker:', factionId, name, troops);
                         addMarker(latlng, factionId, name, troops);
-                        pendingPopup?.close();
+                        map.closePopup();
                         pendingPopup = null;
                     });
                 }
@@ -638,7 +638,7 @@
                 if (cancelBtn) {
                     cancelBtn.addEventListener('click', () => {
                         console.log('Cancel clicked');
-                        pendingPopup?.close();
+                        map.closePopup();
                         pendingPopup = null;
                     });
                 }
@@ -857,7 +857,8 @@
                                     pendingPopup.close();
                                     pendingPopup = null;
                                 }
-                                showAddMarkerPopup(wp.ll, wp);
+                                const latlng = L.latLng(wp.ll[0], wp.ll[1]);
+                                showAddMarkerPopup(latlng, wp);
                             }
                         });
                         m.addTo(wpGroup);
