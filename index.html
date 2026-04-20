@@ -458,42 +458,6 @@
     <div class="edit-indicator" id="edit-indicator">✏️ Режим редактирования</div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
-        // === WAYPOINTS LOADER ===
-        function loadWaypoints() {
-            fetch('waypoints.json')
-                .then(r => r.json())
-                .then(data => {
-                    const colors = {
-                        'GONDOR':'#4169E1','ROHAN':'#228B22','MORDOR':'#8B0000','ISENGARD':'#6A0DAD',
-                        'HIGH_ELF':'#DAA520','WOOD_ELF':'#2E8B57','LOTHLORIEN':'#FFD700',
-                        'DOL_GULDUR':'#4B0082','DALE':'#CD853F','DUNLAND':'#8B4513',
-                        'RHUDAUR':'#696969','RANGER_NORTH':'#4682B4','BREE':'#A0522D',
-                        'HOBBIT':'#7CFC00','DORWINION':'#D2691E','NEAR_HARAD':'#B8860B',
-                        'ANGMAR':'#2F4F4F','GUNDABAD':'#778899','DURINS_FOLK':'#B8860B',
-                        'FANGORN':'#228B22','BLUE_MOUNTAINS':'#4682B4','WIND_MOUNTAINS':'#708090',
-                        'TAURETHRIM':'#006400','MORWAITH':'#8B7355','LOSSOTH':'#ADD8E6',
-                        'RED_MOUNTAINS':'#B22222','HALF_TROLL':'#8B008B','FACELESS':'#363636',
-                        'UTUMNO':'#1C1C1C'
-                    };
-                    const wpGroup = L.featureGroup();
-                    data.forEach(wp => {
-                        const c = colors[wp.f] || '#aaa';
-                        const icon = L.divIcon({
-                            className: 'wp-icon',
-                            html: '<div style="width:10px;height:10px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.8);background:'+c+';box-shadow:0 0 4px '+c+';"></div>',
-                            iconSize: [10, 10],
-                            iconAnchor: [5, 5]
-                        });
-                        const m = L.marker(wp.ll, {icon});
-                        m.bindPopup('<b style="color:'+c+'">'+wp.n+'</b><br><small>'+wp.f+' · MC: '+wp.mc[0]+', '+wp.mc[1]+'</small><br>'+wp.d);
-                        m.addTo(wpGroup);
-                    });
-                    wpGroup.addTo(map);
-                    console.log('Loaded '+data.length+' waypoints');
-                })
-                .catch(e => console.error('Failed to load waypoints:', e));
-        }
-        loadWaypoints();
 
 </script>
     <script>
@@ -529,26 +493,24 @@
         const MC_SCALE = 0.0001; // Scale factor for conversion
 
         // State
-        let markers = [];
         let editMode = false;
         let map;
-        let leafletMarkers = {};
-        let pendingPopup = null;
-        
-        // Глобальный доступ к editMode
+        let troopsData = {};
+        let waypointMarkers = {};
+
+        // Глобальный доступ к editMode и waypoints
         window.editMode = editMode;
+        window.waypoints = null;
 
         // Initialize
         function init() {
             initMap();
-            loadMarkers();
+            loadTroops();
             setupEventListeners();
-            updateMarkersList();
         }
 
         function initMap() {
             // Initialize Leaflet map centered on Middle-earth
-            // Using approximate center: lat 0, lng 0 for the tile system
             map = L.map('map', {
                 crs: L.CRS.Simple,
                 minZoom: 1,
@@ -568,137 +530,58 @@
                 maxZoom: 5,
                 noWrap: true
             }).addTo(map);
-
-            // Map click handler for edit mode - disabled (now using waypoint clicks)
-            // map.on('click', function(e) {
-            //     if (editMode) {
-            //         showAddMarkerPopup(e.latlng);
-            //     }
-            // });
         }
 
-        function showAddMarkerPopup(latlng, waypoint = null) {
-            const factionOptions = FACTIONS.map(f =>
-                `<option value="${f.id}">${f.name}</option>`
-            ).join('');
-
-            const isWaypoint = waypoint !== null;
-            const waypointName = isWaypoint ? waypoint.n : '';
-            const readonlyAttr = isWaypoint ? 'readonly' : '';
-            const nameValue = isWaypoint ? waypointName : '';
-            const title = isWaypoint ? '⚔️ Разместить войска на точке' : '⚔️ Добавить маркер';
-
-            const popupContent = `
-                <div class="popup-title">${title}</div>
-                ${isWaypoint ? `<div class="popup-field" style="background:#2a2a4a;padding:8px;border-radius:4px;margin-bottom:10px;">
-                    <label style="color:#c9a227;font-weight:bold;">📍 Точка:</label>
-                    <input type="text" value="${waypointName}" readonly style="width:100%;padding:4px;background:#1a1a2e;color:#e8e8e8;border:none;cursor:default;">
-                </div>` : ''}
-                <div class="popup-field">
-                    <label>Фракция:</label>
-                    <select id="marker-faction">${factionOptions}</select>
-                </div>
-                ${!isWaypoint ? `<div class="popup-field">
-                    <label>Название:</label>
-                    <input type="text" id="marker-name" placeholder="Введите название...">
-                </div>` : ''}
-                <div class="popup-field">
-                    <label>Количество войск:</label>
-                    <input type="number" id="marker-troops" placeholder="0" min="0">
-                </div>
-                <button class="btn-add" id="add-marker-btn">📍 Разместить войска</button>
-                <button class="btn-cancel" id="cancel-marker-btn">Отмена</button>
-            `;
-
-            pendingPopup = L.popup()
-                .setLatLng(latlng)
-                .setContent(popupContent)
-                .openOn(map);
-
-            // Setup event listeners for popup buttons
-            setTimeout(() => {
-                const addBtn = document.getElementById('add-marker-btn');
-                const cancelBtn = document.getElementById('cancel-marker-btn');
-                
-                console.log('Setting up listeners, addBtn=', !!addBtn, 'cancelBtn=', !!cancelBtn);
-                
-                if (addBtn) {
-                    addBtn.addEventListener('click', () => {
-                        console.log('Add button clicked');
-                        const factionId = document.getElementById('marker-faction').value;
-                        const name = isWaypoint ? waypointName : (document.getElementById('marker-name').value.trim() || 'Без названия');
-                        const troops = parseInt(document.getElementById('marker-troops').value) || 0;
-                        console.log('Adding marker:', factionId, name, troops);
-                        addMarker(latlng, factionId, name, troops);
-                        map.closePopup();
-                        pendingPopup = null;
-                    });
+        // Troops storage functions
+        function loadTroops() {
+            const saved = localStorage.getItem('lotr-troops');
+            if (saved) {
+                try {
+                    troopsData = JSON.parse(saved);
+                    updateWaypointBadges();
+                    updateSidebar();
+                } catch (e) {
+                    console.error('Failed to load troops:', e);
+                    troopsData = {};
                 }
+            }
+        }
 
-                if (cancelBtn) {
-                    cancelBtn.addEventListener('click', () => {
-                        console.log('Cancel clicked');
-                        map.closePopup();
-                        pendingPopup = null;
-                    });
+        function saveTroops() {
+            localStorage.setItem('lotr-troops', JSON.stringify(troopsData));
+            updateWaypointBadges();
+            updateSidebar();
+        }
+
+        function getWaypointTroops(waypointName) {
+            return troopsData[waypointName] || [];
+        }
+
+        function getTotalTroopsForWaypoint(waypointName) {
+            return getWaypointTroops(waypointName).reduce((sum, t) => sum + t.troops, 0);
+        }
+
+        function addTroops(waypointName, factionId, troopsCount) {
+            if (!troopsData[waypointName]) {
+                troopsData[waypointName] = [];
+            }
+            const existing = troopsData[waypointName].find(t => t.factionId === factionId);
+            if (existing) {
+                existing.troops += troopsCount;
+            } else {
+                troopsData[waypointName].push({ factionId, troops: troopsCount });
+            }
+            saveTroops();
+        }
+
+        function removeTroops(waypointName, factionId) {
+            if (troopsData[waypointName]) {
+                troopsData[waypointName] = troopsData[waypointName].filter(t => t.factionId !== factionId);
+                if (troopsData[waypointName].length === 0) {
+                    delete troopsData[waypointName];
                 }
-            }, 100);
-        }
-
-        function addMarker(latlng, factionId, name, troops) {
-            console.log('addMarker called with:', {latlng, factionId, name, troops});
-            const marker = {
-                id: Date.now().toString(),
-                lat: latlng.lat,
-                lng: latlng.lng,
-                factionId,
-                name,
-                troops
-            };
-
-            markers.push(marker);
-            createLeafletMarker(marker);
-            saveMarkers();
-            updateMarkersList();
-        }
-
-        function createLeafletMarker(marker) {
-            const faction = FACTIONS.find(f => f.id === marker.factionId);
-            const factionClass = faction ? `faction-${faction.id.toLowerCase().replace('_', '-')}` : '';
-
-            // Create custom icon
-            const iconHtml = `
-                <div class="custom-marker ${factionClass}" style="width: 36px; height: 36px;">
-                    ${faction ? faction.id.charAt(0) : '?'}
-                    ${marker.troops > 0 ? `<span class="troop-count">${formatTroops(marker.troops)}</span>` : ''}
-                </div>
-            `;
-
-            const customIcon = L.divIcon({
-                html: iconHtml,
-                className: 'custom-marker-container',
-                iconSize: [36, 36],
-                iconAnchor: [18, 18]
-            });
-
-            const leafletMarker = L.marker([marker.lat, marker.lng], { icon: customIcon })
-                .addTo(map);
-
-            // Add popup with marker info
-            const popupContent = `
-                <div class="popup-title">${marker.name}</div>
-                <div style="text-align: center;">
-                    <div style="color: #c9a227; margin-bottom: 5px;">${faction ? faction.name : marker.factionId}</div>
-                    <div>⚔️ Войска: ${marker.troops.toLocaleString()}</div>
-                    <div style="font-size: 0.75rem; color: #666; margin-top: 5px;">
-                        Координаты: ${Math.round(marker.lat)}, ${Math.round(marker.lng)}
-                    </div>
-                </div>
-            `;
-
-            leafletMarker.bindPopup(popupContent);
-
-            leafletMarkers[marker.id] = leafletMarker;
+                saveTroops();
+            }
         }
 
         function formatTroops(num) {
@@ -707,91 +590,107 @@
             return num.toString();
         }
 
-        function deleteMarker(id) {
-            if (leafletMarkers[id]) {
-                map.removeLayer(leafletMarkers[id]);
-                delete leafletMarkers[id];
-            }
-            markers = markers.filter(m => m.id !== id);
-            saveMarkers();
-            updateMarkersList();
-        }
+        function clearAllTroops() {
+            if (Object.keys(troopsData).length === 0) return;
 
-        function clearAllMarkers() {
-            if (markers.length === 0) return;
-
-            if (confirm('Вы уверены, что хотите удалить все маркеры?')) {
-                Object.values(leafletMarkers).forEach(m => map.removeLayer(m));
-                leafletMarkers = {};
-                markers = [];
-                saveMarkers();
-                updateMarkersList();
+            if (confirm('Вы уверены, что хотите удалить все войска?')) {
+                troopsData = {};
+                saveTroops();
             }
         }
 
-        function updateMarkersList() {
+        function focusWaypoint(waypointName) {
+            const wp = window.waypoints && window.waypoints.find(w => w.n === waypointName);
+            if (wp && waypointMarkers[wp.n]) {
+                map.setView(wp.ll, 5);
+                waypointMarkers[wp.n].openPopup();
+            }
+        }
+
+        // Update waypoint markers with badges
+        function updateWaypointBadges() {
+            if (!window.waypoints) return;
+
+            window.waypoints.forEach(wp => {
+                const marker = waypointMarkers[wp.n];
+                if (marker) {
+                    const totalTroops = getTotalTroopsForWaypoint(wp.n);
+                    const colors = {
+                        'GONDOR':'#4169E1','ROHAN':'#228B22','MORDOR':'#8B0000','ISENGARD':'#6A0DAD',
+                        'HIGH_ELF':'#DAA520','WOOD_ELF':'#2E8B57','LOTHLORIEN':'#FFD700',
+                        'DOL_GULDUR':'#4B0082','DALE':'#CD853F','DUNLAND':'#8B4513',
+                        'RHUDAUR':'#696969','RANGER_NORTH':'#4682B4','BREE':'#A0522D',
+                        'HOBBIT':'#7CFC00','DORWINION':'#D2691E','NEAR_HARAD':'#B8860B',
+                        'ANGMAR':'#2F4F4F','GUNDABAD':'#778899','DURINS_FOLK':'#B8860B',
+                        'FANGORN':'#228B22','BLUE_MOUNTAINS':'#4682B4','WIND_MOUNTAINS':'#708090',
+                        'TAURETHRIM':'#006400','MORWAITH':'#8B7355','LOSSOTH':'#ADD8E6',
+                        'RED_MOUNTAINS':'#B22222','HALF_TROLL':'#8B008B','FACELESS':'#363636',
+                        'UTUMNO':'#1C1C1C'
+                    };
+                    const c = colors[wp.f] || '#aaa';
+                    const badgeHtml = totalTroops > 0
+                        ? `<div style="position:absolute;bottom:-6px;right:-6px;background:#c9a227;color:#1a1a2e;border-radius:10px;padding:2px 6px;font-size:0.6rem;font-weight:bold;border:2px solid #0f0f23;min-width:16px;text-align:center;">${formatTroops(totalTroops)}</div>`
+                        : '';
+                    const icon = L.divIcon({
+                        className: 'wp-icon',
+                        html: '<div style="position:relative;width:6px;height:6px;border-radius:50%;border:1px solid rgba(255,255,255,0.6);background:'+c+';box-shadow:0 0 3px '+c+';">' + badgeHtml + '</div>',
+                        iconSize: [6, 6],
+                        iconAnchor: [3, 3]
+                    });
+                    marker.setIcon(icon);
+                }
+            });
+        }
+
+        // Update sidebar with troops per point
+        function updateSidebar() {
             const container = document.getElementById('markers-list');
+            const pointsWithTroops = Object.entries(troopsData);
 
-            if (markers.length === 0) {
+            if (pointsWithTroops.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
                         <svg viewBox="0 0 24 24" fill="currentColor">
                             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
                         </svg>
-                        <p>Нет маркеров</p>
-                        <p style="font-size: 0.8rem; margin-top: 5px;">Включите режим редактирования и кликните на карту</p>
+                        <p>Нет войск</p>
+                        <p style="font-size: 0.8rem; margin-top: 5px;">Включите режим редактирования и кликните на точку</p>
                     </div>
                 `;
                 return;
             }
 
-            container.innerHTML = markers.map(marker => {
-                const faction = FACTIONS.find(f => f.id === marker.factionId);
-                const factionClass = faction ? `faction-${faction.id.toLowerCase().replace('_', '-')}` : '';
+            container.innerHTML = pointsWithTroops.map(([pointName, troops]) => {
+                const wp = window.waypoints && window.waypoints.find(w => w.n === pointName);
+                const totalTroops = troops.reduce((sum, t) => sum + t.troops, 0);
+
+                const troopsList = troops.map(t => {
+                    const faction = FACTIONS.find(f => f.id === t.factionId);
+                    return `<div style="display:flex;align-items:center;gap:6px;margin-top:4px;font-size:0.75rem;">
+                        <span style="width:10px;height:10px;border-radius:50%;background:${faction?.color || '#aaa'};"></span>
+                        <span style="flex:1;">${faction?.name || t.factionId}</span>
+                        <span style="color:#c9a227;font-weight:bold;">${formatTroops(t.troops)}</span>
+                    </div>`;
+                }).join('');
 
                 return `
-                    <div class="marker-item" data-id="${marker.id}">
+                    <div class="marker-item" data-point="${pointName}">
                         <div class="marker-header">
-                            <div class="faction-icon ${factionClass}">${faction ? faction.id.charAt(0) : '?'}</div>
-                            <div class="marker-name">${marker.name}</div>
-                            <div class="marker-troops">⚔️ ${formatTroops(marker.troops)}</div>
+                            <div class="marker-name" style="font-size:0.85rem;">${pointName}</div>
+                            <div class="marker-troops">⚔️ ${formatTroops(totalTroops)}</div>
                         </div>
                         <div class="marker-coords">
-                            📍 ${Math.round(marker.lat)}, ${Math.round(marker.lng)} |
-                            <span style="color: ${faction?.color}">${faction?.name || marker.factionId}</span>
+                            ${wp ? `📍 x: ${wp.mc[0]} y: ${wp.mc[1]}` : ''}
+                        </div>
+                        <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(201,162,39,0.2);">
+                            ${troopsList}
                         </div>
                         <div class="marker-actions">
-                            <button class="btn-delete" onclick="focusMarker('${marker.id}')">👁️ Найти</button>
-                            <button class="btn-delete" onclick="deleteMarker('${marker.id}')">🗑️ Удалить</button>
+                            <button class="btn-delete" onclick="focusWaypoint('${pointName}')">👁️ Найти</button>
                         </div>
                     </div>
                 `;
             }).join('');
-        }
-
-        function focusMarker(id) {
-            const marker = markers.find(m => m.id === id);
-            if (marker && leafletMarkers[id]) {
-                map.setView([marker.lat, marker.lng], 5);
-                leafletMarkers[id].openPopup();
-            }
-        }
-
-        function saveMarkers() {
-            localStorage.setItem('lotr-markers', JSON.stringify(markers));
-        }
-
-        function loadMarkers() {
-            const saved = localStorage.getItem('lotr-markers');
-            if (saved) {
-                try {
-                    markers = JSON.parse(saved);
-                    markers.forEach(m => createLeafletMarker(m));
-                } catch (e) {
-                    console.error('Failed to load markers:', e);
-                    markers = [];
-                }
-            }
         }
 
         function setupEventListeners() {
@@ -804,14 +703,116 @@
 
                 // Change cursor based on mode
                 document.getElementById('map').style.cursor = editMode ? 'crosshair' : 'grab';
+
+                // Refresh waypoints to update popup content for edit mode
+                refreshWaypointPopups();
             });
 
             // Clear all button
-            document.getElementById('clear-all-btn').addEventListener('click', clearAllMarkers);
+            document.getElementById('clear-all-btn').addEventListener('click', clearAllTroops);
 
             // Make functions globally available
-            window.deleteMarker = deleteMarker;
-            window.focusMarker = focusMarker;
+            window.focusWaypoint = focusWaypoint;
+            window.removeTroopsAtPoint = removeTroopsAtPoint;
+            window.addTroopsAtPoint = addTroopsAtPoint;
+        }
+
+        // Add troops from waypoint popup (edit mode)
+        function addTroopsAtPoint(waypointName) {
+            const factionId = document.getElementById('add-troops-faction').value;
+            const troopsCount = parseInt(document.getElementById('add-troops-count').value) || 0;
+            if (troopsCount > 0) {
+                addTroops(waypointName, factionId, troopsCount);
+                refreshWaypointPopups();
+            }
+        }
+
+        // Remove troops from waypoint popup (edit mode)
+        function removeTroopsAtPoint(waypointName, factionId) {
+            removeTroops(waypointName, factionId);
+            refreshWaypointPopups();
+        }
+
+        // Refresh all waypoint popups after troops change
+        function refreshWaypointPopups() {
+            if (!window.waypoints) return;
+            window.waypoints.forEach(wp => {
+                const marker = waypointMarkers[wp.n];
+                if (marker) {
+                    marker.setPopupContent(createWaypointPopupContent(wp));
+                }
+            });
+        }
+
+        // Create waypoint popup content
+        function createWaypointPopupContent(wp) {
+            const troops = getWaypointTroops(wp.n);
+            const totalTroops = troops.reduce((sum, t) => sum + t.troops, 0);
+
+            const colors = {
+                'GONDOR':'#4169E1','ROHAN':'#228B22','MORDOR':'#8B0000','ISENGARD':'#6A0DAD',
+                'HIGH_ELF':'#DAA520','WOOD_ELF':'#2E8B57','LOTHLORIEN':'#FFD700',
+                'DOL_GULDUR':'#4B0082','DALE':'#CD853F','DUNLAND':'#8B4513',
+                'RHUDAUR':'#696969','RANGER_NORTH':'#4682B4','BREE':'#A0522D',
+                'HOBBIT':'#7CFC00','DORWINION':'#D2691E','NEAR_HARAD':'#B8860B',
+                'ANGMAR':'#2F4F4F','GUNDABAD':'#778899','DURINS_FOLK':'#B8860B',
+                'FANGORN':'#228B22','BLUE_MOUNTAINS':'#4682B4','WIND_MOUNTAINS':'#708090',
+                'TAURETHRIM':'#006400','MORWAITH':'#8B7355','LOSSOTH':'#ADD8E6',
+                'RED_MOUNTAINS':'#B22222','HALF_TROLL':'#8B008B','FACELESS':'#363636',
+                'UTUMNO':'#1C1C1C'
+            };
+            const c = colors[wp.f] || '#aaa';
+
+            // Build troops list
+            let troopsHtml = '';
+            if (troops.length > 0) {
+                troopsHtml = '<div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(201,162,39,0.3);">';
+                troopsHtml += '<div style="color:#c9a227;font-weight:bold;margin-bottom:8px;font-size:0.85rem;">⚔️ Войска на точке:</div>';
+                troops.forEach(t => {
+                    const faction = FACTIONS.find(f => f.id === t.factionId);
+                    const deleteBtn = editMode
+                        ? `<button onclick="removeTroopsAtPoint('${wp.n}', '${t.factionId}')" style="background:rgba(139,0,0,0.4);border:1px solid #ff4444;color:#ff8888;border-radius:3px;padding:2px 6px;font-size:0.7rem;cursor:pointer;float:right;">🗑️</button>`
+                        : '';
+                    troopsHtml += `
+                        <div style="display:flex;align-items:center;gap:8px;padding:6px;background:rgba(26,26,46,0.5);border-radius:4px;margin-bottom:6px;">
+                            <span style="width:12px;height:12px;border-radius:50%;background:${faction?.color || '#aaa'};border:1px solid rgba(255,255,255,0.3);"></span>
+                            <span style="flex:1;font-size:0.85rem;">${faction?.name || t.factionId}</span>
+                            <span style="color:#c9a227;font-weight:bold;">${formatTroops(t.troops)}</span>
+                            ${deleteBtn}
+                        </div>
+                    `;
+                });
+                troopsHtml += '</div>';
+            } else {
+                troopsHtml = '<div style="margin-top:12px;padding:8px;background:rgba(26,26,46,0.5);border-radius:4px;text-align:center;color:#666;font-size:0.8rem;">Нет войск</div>';
+            }
+
+            // Add troops form (only in edit mode)
+            const addFormHtml = editMode ? `
+                <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(201,162,39,0.3);">
+                    <div style="color:#c9a227;font-weight:bold;margin-bottom:8px;font-size:0.85rem;">➕ Добавить войска:</div>
+                    <div style="margin-bottom:8px;">
+                        <select id="add-troops-faction" style="width:100%;padding:6px;border:1px solid #c9a227;border-radius:4px;background:#1a1a2e;color:#e8e8e8;font-family:'Cinzel',serif;font-size:0.8rem;">
+                            ${FACTIONS.map(f => `<option value="${f.id}">${f.name}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div style="display:flex;gap:8px;">
+                        <input type="number" id="add-troops-count" placeholder="Количество" min="1" style="flex:1;padding:6px;border:1px solid #c9a227;border-radius:4px;background:#1a1a2e;color:#e8e8e8;font-family:'Cinzel',serif;font-size:0.8rem;">
+                        <button onclick="addTroopsAtPoint('${wp.n}')" style="flex:1;padding:6px;background:linear-gradient(180deg,#c9a227 0%,#8b6914 100%);border:none;border-radius:4px;color:#1a1a2e;font-family:'Cinzel',serif;font-size:0.8rem;font-weight:700;cursor:pointer;">Добавить</button>
+                    </div>
+                </div>
+            ` : '';
+
+            return `
+                <div class="popup-title" style="color:${c};">${wp.n}</div>
+                <div style="text-align:center;">
+                    <div style="color:#888;font-size:0.75rem;margin-bottom:4px;">${wp.f}</div>
+                    <div style="font-size:0.8rem;color:#666;margin-bottom:8px;">x: ${wp.mc[0]} | y: ${wp.mc[1]}</div>
+                    <div style="font-size:0.85rem;line-height:1.4;color:#ccc;">${wp.d}</div>
+                </div>
+                ${troopsHtml}
+                ${addFormHtml}
+            `;
         }
 
         // Start
@@ -835,33 +836,27 @@
                         'UTUMNO':'#1C1C1C'
                     };
                     const wpGroup = L.featureGroup();
-                    // Сохраняем waypoints глобально для доступа при создании маркеров
                     window.waypoints = data;
                     data.forEach(wp => {
                         const c = colors[wp.f] || '#aaa';
+                        const totalTroops = getTotalTroopsForWaypoint(wp.n);
+                        const badgeHtml = totalTroops > 0
+                            ? `<div style="position:absolute;bottom:-6px;right:-6px;background:#c9a227;color:#1a1a2e;border-radius:10px;padding:2px 6px;font-size:0.6rem;font-weight:bold;border:2px solid #0f0f23;min-width:16px;text-align:center;">${formatTroops(totalTroops)}</div>`
+                            : '';
                         const icon = L.divIcon({
                             className: 'wp-icon',
-                            html: '<div style="width:6px;height:6px;border-radius:50%;border:1px solid rgba(255,255,255,0.6);background:'+c+';box-shadow:0 0 3px '+c+';"></div>',
+                            html: '<div style="position:relative;width:6px;height:6px;border-radius:50%;border:1px solid rgba(255,255,255,0.6);background:'+c+';box-shadow:0 0 3px '+c+';">' + badgeHtml + '</div>',
                             iconSize: [6, 6],
                             iconAnchor: [3, 3]
                         });
                         const m = L.marker(wp.ll, {icon});
                         m.bindTooltip('<b>'+wp.n+'</b><br>x: '+wp.mc[0]+'<br>y: '+wp.mc[1], {direction: 'top', offset: [0, -8]});
-                        m.bindPopup('<b style="color:'+c+'">'+wp.n+'</b><br><small>'+wp.f+' · x: '+wp.mc[0]+' y: '+wp.mc[1]+'</small><br>'+wp.d);
-                        // Клик по waypoint в режиме редактирования показывает модалку
+                        m.bindPopup(createWaypointPopupContent(wp), {maxWidth: 320});
                         m.on('click', function(e) {
-                            if (editMode) {
-                                e.originalEvent.stopPropagation();
-                                L.DomEvent.stopPropagation(e);
-                                if (pendingPopup) {
-                                    pendingPopup.close();
-                                    pendingPopup = null;
-                                }
-                                const latlng = L.latLng(wp.ll[0], wp.ll[1]);
-                                showAddMarkerPopup(latlng, wp);
-                            }
+                            m.openPopup();
                         });
                         m.addTo(wpGroup);
+                        waypointMarkers[wp.n] = m;
                     });
                     wpGroup.addTo(map);
                     console.log('Loaded '+data.length+' waypoints');
