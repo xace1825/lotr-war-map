@@ -653,6 +653,42 @@
             letter-spacing: 0.5px;
         }
 
+        #limits-panel {
+            position: fixed;
+            bottom: 16px;
+            right: 16px;
+            background: rgba(22, 27, 34, 0.95);
+            border: 1px solid rgba(201, 162, 39, 0.3);
+            border-radius: 10px;
+            z-index: 1500;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            min-width: 220px;
+            max-width: 280px;
+            backdrop-filter: blur(10px);
+            font-size: 0.75rem;
+        }
+        #limits-header {
+            padding: 10px 14px;
+            color: #c9a227;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Cinzel', serif;
+            border-bottom: 1px solid rgba(201, 162, 39, 0.15);
+        }
+        #limits-header:hover { background: rgba(201, 162, 39, 0.08); }
+        #limits-body {
+            padding: 10px 14px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        #limits-body.collapsed { display: none; }
+        #limits-body::-webkit-scrollbar { width: 3px; }
+        #limits-body::-webkit-scrollbar-thumb { background: #c9a227; border-radius: 3px; }
+        .limit-input:focus { border-color: #c9a227 !important; outline: none; }
+
         .edit-indicator.active {
             display: flex;
             align-items: center;
@@ -882,13 +918,6 @@
                 <div class="legend-grid" id="faction-legend"></div>
             </div>
 
-            <!-- Section: Лимиты -->
-            <div class="sidebar-section">
-                <div class="sidebar-section-title">⚡ Лимиты фракций</div>
-                <div id="limits-list" style="max-height:250px;overflow-y:auto;"></div>
-                <button class="btn" onclick="saveAllLimits()" style="width:100%;margin-top:8px;padding:6px;background:linear-gradient(180deg,#c9a227 0%,#8b6914 100%);border:none;border-radius:6px;color:#1a1a2e;font-family:'Cinzel',serif;font-size:0.75rem;font-weight:700;cursor:pointer;">💾 Сохранить лимиты</button>
-            </div>
-
             <!-- Section: Войска -->
             <div class="sidebar-section" style="padding-bottom: 6px;">
                 <div class="sidebar-section-title">Войска</div>
@@ -911,6 +940,17 @@
     <div class="edit-indicator" id="edit-indicator">
         <div class="edit-dot"></div>
         Режим редактирования
+    </div>
+
+    <!-- Floating limits panel -->
+    <div id="limits-panel">
+        <div id="limits-header" onclick="toggleLimitsPanel()">
+            ⚡ Лимиты фракций <span id="limits-toggle-icon">▼</span>
+        </div>
+        <div id="limits-body">
+            <div id="limits-list"></div>
+            <button class="btn" onclick="saveAllLimits()" style="width:100%;margin-top:8px;padding:6px;background:linear-gradient(180deg,#c9a227 0%,#8b6914 100%);border:none;border-radius:6px;color:#1a1a2e;font-family:'Cinzel',serif;font-size:0.75rem;font-weight:700;cursor:pointer;">💾 Сохранить</button>
+        </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -1064,6 +1104,14 @@
                 info.innerHTML = `<span style="color:#4a4;">⚡ ${getFactionName(fid)}: лимит не установлен</span>`;
             }
         };
+        
+        function toggleLimitsPanel() {
+            const body = document.getElementById('limits-body');
+            const icon = document.getElementById('limits-toggle-icon');
+            body.classList.toggle('collapsed');
+            icon.textContent = body.classList.contains('collapsed') ? '▲' : '▼';
+        }
+        window.toggleLimitsPanel = toggleLimitsPanel;
 
         // === TROOPS STORAGE ===
         function loadTroops() {
