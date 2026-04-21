@@ -882,6 +882,13 @@
                 <div class="legend-grid" id="faction-legend"></div>
             </div>
 
+            <!-- Section: Лимиты -->
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">⚡ Лимиты фракций</div>
+                <div id="limits-list" style="max-height:250px;overflow-y:auto;"></div>
+                <button class="btn" onclick="saveAllLimits()" style="width:100%;margin-top:8px;padding:6px;background:linear-gradient(180deg,#c9a227 0%,#8b6914 100%);border:none;border-radius:6px;color:#1a1a2e;font-family:'Cinzel',serif;font-size:0.75rem;font-weight:700;cursor:pointer;">💾 Сохранить лимиты</button>
+            </div>
+
             <!-- Section: Войска -->
             <div class="sidebar-section" style="padding-bottom: 6px;">
                 <div class="sidebar-section-title">Войска</div>
@@ -975,6 +982,7 @@
             loadTroops();
             setupEventListeners();
             buildFactionLegend();
+            renderLimitsList();
         }
 
         function initMap() {
@@ -1012,6 +1020,51 @@
             ).join('');
         }
 
+        function renderLimitsList() {
+            const container = document.getElementById('limits-list');
+            if (!container) return;
+            container.innerHTML = FACTIONS.map(f => {
+                const limit = getFactionLimit(f.id);
+                const current = getFactionTotalTroops(f.id);
+                const pct = limit > 0 ? Math.min(100, (current / limit) * 100) : 0;
+                const barColor = pct > 90 ? '#ff4444' : pct > 70 ? '#ff9900' : '#c9a227';
+                return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:0.75rem;">
+                    <span class="legend-dot" style="background:${f.color};box-shadow:0 0 4px ${f.color};flex-shrink:0;"></span>
+                    <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f.name}</span>
+                    <span style="color:${barColor};font-weight:bold;min-width:40px;text-align:right;">${current}</span>
+                    <span style="color:#666;">/</span>
+                    <input type="number" value="${limit || ''}" placeholder="∞" min="0"
+                        data-faction="${f.id}"
+                        class="limit-input"
+                        style="width:55px;padding:2px 4px;border:1px solid #333;border-radius:4px;background:#1a1a2e;color:#e8e8e8;font-size:0.7rem;text-align:center;">
+                </div>`;
+            }).join('');
+        }
+        
+        function saveAllLimits() {
+            const inputs = document.querySelectorAll('.limit-input');
+            inputs.forEach(inp => {
+                setFactionLimit(inp.dataset.faction, inp.value);
+            });
+            renderLimitsList();
+            alert('✅ Лимиты сохранены!');
+        }
+        
+        window.updateLimitInfo = function() {
+            const sel = document.getElementById('add-troops-faction');
+            const info = document.getElementById('limit-info');
+            if (!sel || !info) return;
+            const fid = sel.value;
+            const lim = getFactionLimit(fid);
+            const cur = getFactionTotalTroops(fid);
+            if (lim > 0) {
+                const avail = lim - cur;
+                info.innerHTML = `<span style="color:${avail > 0 ? '#c9a227' : '#ff4444'}">⚡ ${getFactionName(fid)}: ${cur}/${lim} (доступно: ${avail > 0 ? avail : 0})</span>`;
+            } else {
+                info.innerHTML = `<span style="color:#4a4;">⚡ ${getFactionName(fid)}: лимит не установлен</span>`;
+            }
+        };
+
         // === TROOPS STORAGE ===
         function loadTroops() {
             const saved = localStorage.getItem('lotr-troops');
@@ -1042,16 +1095,29 @@
         }
 
         function addTroops(waypointName, factionId, troopsCount) {
+            // Проверяем лимит фракции
+            const limit = getFactionLimit(factionId);
+            const current = getFactionTotalTroops(factionId);
+            const existing = troopsData[waypointName]?.find(t => t.factionId === factionId);
+            const alreadyOnPoint = existing ? existing.troops : 0;
+            const available = limit - (current - alreadyOnPoint);
+            
+            if (limit > 0 && troopsCount > available) {
+                alert(`⚠️ Лимит фракции превышен!\n${getFactionName(factionId)}: ${current}/${limit}\nМожно добавить ещё: ${available > 0 ? available : 0}`);
+                return false;
+            }
+            
             if (!troopsData[waypointName]) {
                 troopsData[waypointName] = [];
             }
-            const existing = troopsData[waypointName].find(t => t.factionId === factionId);
-            if (existing) {
-                existing.troops += troopsCount;
+            const existingEntry = troopsData[waypointName].find(t => t.factionId === factionId);
+            if (existingEntry) {
+                existingEntry.troops += troopsCount;
             } else {
                 troopsData[waypointName].push({ factionId, troops: troopsCount });
             }
             saveTroops();
+            return true;
         }
 
         function removeTroops(waypointName, factionId) {
@@ -1069,6 +1135,45 @@
             if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
             return num.toString();
         }
+
+        // === FACTION LIMITS ===
+        let factionLimits = {};
+        
+        function loadFactionLimits() {
+            const saved = localStorage.getItem('lotr-faction-limits');
+            if (saved) {
+                try { factionLimits = JSON.parse(saved); } catch(e) { factionLimits = {}; }
+            }
+        }
+        
+        function saveFactionLimits() {
+            localStorage.setItem('lotr-faction-limits', JSON.stringify(factionLimits));
+        }
+        
+        function getFactionLimit(factionId) {
+            return factionLimits[factionId] || 0;
+        }
+        
+        function setFactionLimit(factionId, limit) {
+            factionLimits[factionId] = parseInt(limit) || 0;
+            saveFactionLimits();
+        }
+        
+        function getFactionTotalTroops(factionId) {
+            let total = 0;
+            for (const wpName in troopsData) {
+                const entry = troopsData[wpName].find(t => t.factionId === factionId);
+                if (entry) total += entry.troops;
+            }
+            return total;
+        }
+        
+        function getFactionName(factionId) {
+            const f = FACTIONS.find(f => f.id === factionId);
+            return f ? f.name : factionId;
+        }
+        
+        loadFactionLimits();
 
         function clearAllTroops() {
             if (Object.keys(troopsData).length === 0) return;
@@ -1180,7 +1285,7 @@
             const factionId = document.getElementById('add-troops-faction').value;
             const troopsCount = parseInt(document.getElementById('add-troops-count').value) || 0;
             if (troopsCount > 0) {
-                addTroops(waypointName, factionId, troopsCount);
+                const success = addTroops(waypointName, factionId, troopsCount);
                 refreshWaypointPopups();
             }
         }
@@ -1228,13 +1333,18 @@
                 <hr class="popup-divider">
                 <div class="popup-section-title">&#10133; Добавить войска:</div>
                 <div class="popup-add-form">
-                    <select id="add-troops-faction">
-                        ${FACTIONS.map(f => `<option value="${f.id}">${f.name}</option>`).join('')}
+                    <select id="add-troops-faction" onchange="updateLimitInfo()">
+                        ${FACTIONS.map(f => {
+                            const lim = getFactionLimit(f.id);
+                            const cur = getFactionTotalTroops(f.id);
+                            return `<option value="${f.id}">${f.name}${lim > 0 ? ' ('+cur+'/'+lim+')' : ''}</option>`;
+                        }).join('')}
                     </select>
                     <div class="popup-add-row">
                         <input type="number" id="add-troops-count" placeholder="Кол-во" min="1">
                         <button class="popup-add-btn" onclick="addTroopsAtPoint('${wp.n}')">Добавить</button>
                     </div>
+                    <div id="limit-info" style="font-size:0.7rem;color:#888;margin-top:4px;"></div>
                 </div>
             ` : '';
 
