@@ -1067,16 +1067,19 @@
                 const limit = getFactionLimit(f.id);
                 const current = getFactionTotalTroops(f.id);
                 const pct = limit > 0 ? Math.min(100, (current / limit) * 100) : 0;
-                const barColor = pct > 90 ? '#ff4444' : pct > 70 ? '#ff9900' : '#c9a227';
-                return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:0.75rem;">
-                    <span class="legend-dot" style="background:${f.color};box-shadow:0 0 4px ${f.color};flex-shrink:0;"></span>
-                    <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f.name}</span>
-                    <span style="color:${barColor};font-weight:bold;min-width:40px;text-align:right;">${current}</span>
-                    <span style="color:#666;">/</span>
+                const barColor = pct > 90 ? '#ff4444' : pct > 70 ? '#ff9900' : f.color;
+                return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:0.75rem;padding:4px 6px;border-radius:6px;border:1px solid ${f.color}33;background:${f.color}0a;">
+                    <span class="legend-dot" style="background:${f.color};box-shadow:0 0 6px ${f.color};flex-shrink:0;width:10px;height:10px;"></span>
+                    <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${f.color};">${f.name}</span>
+                    ${limit > 0 ? `<div style="width:40px;height:4px;background:#1a1a2e;border-radius:2px;overflow:hidden;flex-shrink:0;">
+                        <div style="width:${pct}%;height:100%;background:${barColor};border-radius:2px;transition:width 0.3s;"></div>
+                    </div>` : ''}
+                    <span style="color:${f.color};font-weight:bold;min-width:30px;text-align:right;text-shadow:0 0 8px ${f.color}66;">${current}</span>
+                    <span style="color:#555;">/</span>
                     <input type="number" value="${limit || ''}" placeholder="∞" min="0"
                         data-faction="${f.id}"
                         class="limit-input"
-                        style="width:55px;padding:2px 4px;border:1px solid #333;border-radius:4px;background:#1a1a2e;color:#e8e8e8;font-size:0.7rem;text-align:center;">
+                        style="width:50px;padding:2px 4px;border:1px solid ${f.color}44;border-radius:4px;background:#0d1117;color:${f.color};font-size:0.7rem;text-align:center;">
                 </div>`;
             }).join('');
         }
