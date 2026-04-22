@@ -876,10 +876,193 @@
             background: linear-gradient(135deg, #ffd700, #c9a227);
             box-shadow: 0 4px 12px rgba(201, 162, 39, 0.3);
         }
+
+        /* === LOGIN MODAL === */
+        #login-overlay {
+            position: fixed;
+            inset: 0;
+            background: #0d1117;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.4s ease;
+        }
+
+        #login-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #login-modal {
+            background: #161b22;
+            border: 1px solid rgba(201, 162, 39, 0.4);
+            border-radius: 16px;
+            padding: 40px 36px;
+            width: 380px;
+            max-width: 90vw;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8), 0 0 40px rgba(201, 162, 39, 0.1);
+            animation: loginFadeIn 0.5s ease;
+        }
+
+        @keyframes loginFadeIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        #login-modal h2 {
+            text-align: center;
+            color: #c9a227;
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            letter-spacing: 1px;
+        }
+
+        #login-modal .login-subtitle {
+            text-align: center;
+            color: #484f58;
+            font-size: 0.7rem;
+            margin-bottom: 28px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .login-field {
+            margin-bottom: 16px;
+        }
+
+        .login-field label {
+            display: block;
+            font-size: 0.75rem;
+            color: #c9a227;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .login-field input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid rgba(201, 162, 39, 0.3);
+            border-radius: 8px;
+            background: #0d1117;
+            color: #e8e8e8;
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+
+        .login-field input:focus {
+            outline: none;
+            border-color: #c9a227;
+            box-shadow: 0 0 16px rgba(201, 162, 39, 0.2);
+        }
+
+        .login-error {
+            color: #ff4444;
+            font-size: 0.75rem;
+            text-align: center;
+            margin-bottom: 12px;
+            min-height: 18px;
+        }
+
+        #login-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #c9a227 0%, #8b6914 100%);
+            border: none;
+            border-radius: 8px;
+            color: #0d1117;
+            font-family: 'Cinzel', serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
+            margin-top: 8px;
+        }
+
+        #login-btn:hover {
+            background: linear-gradient(135deg, #ffd700 0%, #c9a227 100%);
+            transform: scale(1.02);
+            box-shadow: 0 4px 20px rgba(201, 162, 39, 0.4);
+        }
+
+        /* Welcome banner */
+        .welcome-banner {
+            background: linear-gradient(135deg, rgba(201, 162, 39, 0.15) 0%, rgba(139, 105, 20, 0.1) 100%);
+            border: 1px solid rgba(201, 162, 39, 0.3);
+            border-radius: 8px;
+            padding: 8px 14px;
+            margin: 0 16px 10px 16px;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #c9a227;
+            display: none;
+        }
+
+        .welcome-banner.show { display: block; }
+
+        /* User info in sidebar header */
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .user-name {
+            font-size: 0.7rem;
+            color: #0d1117;
+            font-weight: 700;
+            background: rgba(0,0,0,0.15);
+            padding: 3px 10px;
+            border-radius: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 130px;
+        }
+
+        #logout-btn {
+            background: rgba(0,0,0,0.2);
+            border: none;
+            color: #0d1117;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        #logout-btn:hover { background: rgba(0,0,0,0.4); }
     </style>
 </head>
 <body>
-    <div id="app">
+    <!-- Login Overlay -->
+    <div id="login-overlay">
+        <div id="login-modal">
+            <h2>⚔️ Карта Средиземья</h2>
+            <p class="login-subtitle">Войдите, чтобы продолжить</p>
+            <div class="login-field">
+                <label>Фракция / Логин</label>
+                <input type="text" id="login-username" placeholder="Введите название фракции" autocomplete="off">
+            </div>
+            <div class="login-field">
+                <label>Пароль</label>
+                <input type="password" id="login-password" placeholder="Введите пароль">
+            </div>
+            <div class="login-error" id="login-error"></div>
+            <button id="login-btn">Войти</button>
+        </div>
+    </div>
+
+    <div id="app" style="display:none;">
         <!-- Hamburger button -->
         <button id="hamburger" class="hidden" onclick="toggleSidebar()">&#9776;</button>
 
@@ -889,15 +1072,22 @@
         <!-- Sidebar -->
         <div id="sidebar">
             <div id="sidebar-header">
-                <div class="title-block">
-                    <h1>Карта Средиземья</h1>
-                    <p>Enchald LOTR Server</p>
+                <div class="user-info">
+                    <div class="title-block">
+                        <h1>Карта Средиземья</h1>
+                        <p>Enchald LOTR Server</p>
+                    </div>
+                    <span class="user-name" id="user-name-display"></span>
+                    <button id="logout-btn" onclick="logout()" title="Выйти">&#9211;</button>
                 </div>
                 <button id="sidebar-close" onclick="toggleSidebar()">&times;</button>
             </div>
 
+            <!-- Welcome banner -->
+            <div class="welcome-banner" id="welcome-banner"></div>
+
             <!-- Section: Управление -->
-            <div class="sidebar-section">
+            <div class="sidebar-section" id="controls-section">
                 <div class="sidebar-section-title">Управление</div>
                 <div class="toggle-container">
                     <span class="toggle-label">
@@ -1002,9 +1192,157 @@
         let map;
         let troopsData = {};
         let waypointMarkers = {};
+        let currentUser = null;
 
         window.editMode = editMode;
         window.waypoints = null;
+
+        // === AUTH SYSTEM ===
+        const VALID_FACTIONS = [
+            'GONDOR','ROHAN','MORDOR','ISENGARD','HIGH_ELF','WOOD_ELF','LOTHLORIEN',
+            'DOL_GULDUR','DALE','DUNLAND','RHUDAUR','RANGER_NORTH','BREE','HOBBIT',
+            'DORWINION','NEAR_HARAD','ANGMAR','GUNDABAD','DURINS_FOLK','FANGORN',
+            'BLUE_MOUNTAINS','WIND_MOUNTAINS','TAURETHRIM','MORWAITH','LOSSOTH',
+            'RED_MOUNTAINS','HALF_TROLL','FACELESS','UTUMNO'
+        ];
+
+        function getCurrentUser() {
+            if (currentUser) return currentUser;
+            const saved = sessionStorage.getItem('lotr-user');
+            if (saved) {
+                try {
+                    currentUser = JSON.parse(saved);
+                    return currentUser;
+                } catch(e) {}
+            }
+            return null;
+        }
+
+        function setCurrentUser(user) {
+            currentUser = user;
+            sessionStorage.setItem('lotr-user', JSON.stringify(user));
+        }
+
+        function clearCurrentUser() {
+            currentUser = null;
+            sessionStorage.removeItem('lotr-user');
+        }
+
+        function handleLogin() {
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+            const errorEl = document.getElementById('login-error');
+
+            if (!username || !password) {
+                errorEl.textContent = 'Введите логин и пароль';
+                return;
+            }
+
+            const upperUser = username.toUpperCase();
+            const upperPass = password.toUpperCase();
+
+            // Admin check
+            if (upperUser === 'ADMIN' && upperPass === 'ADMIN') {
+                setCurrentUser({ username: 'Admin', factionId: null, isAdmin: true });
+                showApp();
+                return;
+            }
+
+            // Faction check
+            if (VALID_FACTIONS.includes(upperUser) && upperUser === upperPass) {
+                setCurrentUser({ username: upperUser, factionId: upperUser, isAdmin: false });
+                showApp();
+                return;
+            }
+
+            errorEl.textContent = 'Неверный логин или пароль';
+        }
+
+        function showApp() {
+            document.getElementById('login-overlay').classList.add('hidden');
+            document.getElementById('app').style.display = 'flex';
+
+            const user = getCurrentUser();
+            if (user) {
+                applyFactionUI();
+            }
+        }
+
+        function applyFactionUI() {
+            const user = getCurrentUser();
+            if (!user) return;
+
+            // Show user name
+            const nameEl = document.getElementById('user-name-display');
+            if (user.isAdmin) {
+                nameEl.textContent = '👑 Админ';
+            } else {
+                const faction = FACTIONS.find(f => f.id === user.factionId);
+                nameEl.textContent = faction ? faction.name : user.factionId;
+            }
+
+            // Welcome banner
+            const banner = document.getElementById('welcome-banner');
+            if (user.isAdmin) {
+                banner.textContent = 'Привет, Админ!';
+            } else {
+                const faction = FACTIONS.find(f => f.id === user.factionId);
+                banner.textContent = `Привет, ${faction ? faction.name : user.factionId}!`;
+            }
+            banner.classList.add('show');
+
+            // Hide/show controls based on role
+            const controlsSection = document.getElementById('controls-section');
+            const limitsPanel = document.getElementById('limits-panel');
+
+            if (!user.isAdmin) {
+                // Hide edit toggle and clear button for non-admin
+                controlsSection.style.display = 'none';
+                // Hide limits panel for non-admin
+                limitsPanel.style.display = 'none';
+                // Non-admin always in edit mode
+                editMode = true;
+                window.editMode = true;
+            } else {
+                // Admin: show everything, edit mode from toggle
+                controlsSection.style.display = '';
+                limitsPanel.style.display = '';
+                editMode = document.getElementById('edit-toggle').checked;
+                window.editMode = editMode;
+                document.getElementById('edit-indicator').classList.toggle('active', editMode);
+                document.getElementById('map').style.cursor = editMode ? 'crosshair' : 'grab';
+            }
+
+            // Refresh popups, badges, and sidebar with filtered data
+            updateWaypointBadges();
+            refreshWaypointPopups();
+            updateSidebar();
+        }
+
+        function logout() {
+            clearCurrentUser();
+            location.reload();
+        }
+
+        // Check session on load
+        function checkAuth() {
+            const user = getCurrentUser();
+            if (user) {
+                showApp();
+            } else {
+                document.getElementById('login-overlay').classList.remove('hidden');
+                // Focus username input
+                setTimeout(() => document.getElementById('login-username').focus(), 300);
+                // Bind enter key
+                document.getElementById('login-username').addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') document.getElementById('login-password').focus();
+                });
+                document.getElementById('login-password').addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') handleLogin();
+                });
+                document.getElementById('login-btn').addEventListener('click', handleLogin);
+            }
+        }
 
         // === SIDEBAR TOGGLE ===
         function toggleSidebar() {
@@ -1023,6 +1361,7 @@
             setupEventListeners();
             buildFactionLegend();
             renderLimitsList();
+            checkAuth();
         }
 
         function initMap() {
@@ -1063,6 +1402,11 @@
         function renderLimitsList() {
             const container = document.getElementById('limits-list');
             if (!container) return;
+            const user = getCurrentUser();
+            if (user && !user.isAdmin) {
+                container.innerHTML = '<div style="color:#484f58;text-align:center;padding:10px;">Только для администратора</div>';
+                return;
+            }
             container.innerHTML = FACTIONS.map(f => {
                 const limit = getFactionLimit(f.id);
                 const current = getFactionTotalTroops(f.id);
@@ -1245,7 +1589,13 @@
         // === WAYPOINT MARKERS WITH BADGES ===
         function createWaypointIcon(wp) {
             const c = FACTION_COLORS[wp.f] || '#aaa';
-            const totalTroops = getTotalTroopsForWaypoint(wp.n);
+            let totalTroops = getTotalTroopsForWaypoint(wp.n);
+            // Non-admin: badge shows only own faction troops
+            const user = getCurrentUser();
+            if (user && !user.isAdmin && user.factionId) {
+                const ownEntry = getWaypointTroops(wp.n).find(t => t.factionId === user.factionId);
+                totalTroops = ownEntry ? ownEntry.troops : 0;
+            }
             const badgeHtml = totalTroops > 0
                 ? `<div class="wp-badge">${formatTroops(totalTroops)}</div>`
                 : '';
@@ -1270,7 +1620,18 @@
         // === SIDEBAR UPDATE ===
         function updateSidebar() {
             const container = document.getElementById('markers-list');
-            const pointsWithTroops = Object.entries(troopsData);
+            const user = getCurrentUser();
+            let pointsWithTroops = Object.entries(troopsData);
+
+            // Filter by faction for non-admin
+            if (user && !user.isAdmin && user.factionId) {
+                pointsWithTroops = pointsWithTroops
+                    .map(([pointName, troops]) => {
+                        const filtered = troops.filter(t => t.factionId === user.factionId);
+                        return [pointName, filtered];
+                    })
+                    .filter(([_, troops]) => troops.length > 0);
+            }
 
             if (pointsWithTroops.length === 0) {
                 container.innerHTML = `
@@ -1357,15 +1718,22 @@
         }
 
         function createWaypointPopupContent(wp) {
-            const troops = getWaypointTroops(wp.n);
+            const user = getCurrentUser();
+            let troops = getWaypointTroops(wp.n);
             const c = FACTION_COLORS[wp.f] || '#aaa';
+
+            // Filter troops for non-admin
+            if (user && !user.isAdmin && user.factionId) {
+                troops = troops.filter(t => t.factionId === user.factionId);
+            }
 
             // Troops list
             let troopsHtml = '';
             if (troops.length > 0) {
                 troopsHtml = troops.map(t => {
                     const faction = FACTIONS.find(f => f.id === t.factionId);
-                    const deleteBtn = editMode
+                    const canDelete = user ? (user.isAdmin || user.factionId === t.factionId) : false;
+                    const deleteBtn = canDelete
                         ? `<button class="popup-troop-delete" onclick="removeTroopsAtPoint('${wp.n}', '${t.factionId}')">Удалить</button>`
                         : '';
                     return `<div class="popup-troop-entry">
@@ -1379,25 +1747,42 @@
                 troopsHtml = '<div class="popup-no-troops">Нет войск</div>';
             }
 
-            // Add form (edit mode only)
-            const addFormHtml = editMode ? `
-                <hr class="popup-divider">
-                <div class="popup-section-title">&#10133; Добавить войска:</div>
-                <div class="popup-add-form">
-                    <select id="add-troops-faction" onchange="updateLimitInfo()">
-                        ${FACTIONS.map(f => {
-                            const lim = getFactionLimit(f.id);
-                            const cur = getFactionTotalTroops(f.id);
-                            return `<option value="${f.id}">${f.name}${lim > 0 ? ' ('+cur+'/'+lim+')' : ''}</option>`;
-                        }).join('')}
-                    </select>
-                    <div class="popup-add-row">
-                        <input type="number" id="add-troops-count" placeholder="Кол-во" min="1">
-                        <button class="popup-add-btn" onclick="addTroopsAtPoint('${wp.n}')">Добавить</button>
+            // Add form — non-admin: always shown, faction locked
+            const showAddForm = editMode;
+            if (showAddForm) {
+                const isLocked = user && !user.isAdmin && user.factionId;
+                const factionOptions = isLocked
+                    ? `<option value="${user.factionId}" selected>${getFactionName(user.factionId)}</option>`
+                    : FACTIONS.map(f => {
+                        const lim = getFactionLimit(f.id);
+                        const cur = getFactionTotalTroops(f.id);
+                        return `<option value="${f.id}">${f.name}${lim > 0 ? ' ('+cur+'/'+lim+')' : ''}</option>`;
+                    }).join('');
+
+                return `
+                    <div class="popup-title" style="color:${c};">${wp.n}</div>
+                    <div style="text-align:center;">
+                        <div class="popup-faction">${wp.f}</div>
+                        <div class="popup-coords">x: ${wp.mc[0]} | y: ${wp.mc[1]}</div>
+                        <div class="popup-desc">${wp.d}</div>
                     </div>
-                    <div id="limit-info" style="font-size:0.7rem;color:#888;margin-top:4px;"></div>
-                </div>
-            ` : '';
+                    <hr class="popup-divider">
+                    <div class="popup-section-title">&#9876; Войска на точке:</div>
+                    ${troopsHtml}
+                    <hr class="popup-divider">
+                    <div class="popup-section-title">&#10133; Добавить войска:</div>
+                    <div class="popup-add-form">
+                        <select id="add-troops-faction" ${isLocked ? 'disabled' : ''} onchange="updateLimitInfo()">
+                            ${factionOptions}
+                        </select>
+                        <div class="popup-add-row">
+                            <input type="number" id="add-troops-count" placeholder="Кол-во" min="1">
+                            <button class="popup-add-btn" onclick="addTroopsAtPoint('${wp.n}')">Добавить</button>
+                        </div>
+                        <div id="limit-info" style="font-size:0.7rem;color:#888;margin-top:4px;"></div>
+                    </div>
+                `;
+            }
 
             return `
                 <div class="popup-title" style="color:${c};">${wp.n}</div>
@@ -1409,7 +1794,6 @@
                 <hr class="popup-divider">
                 <div class="popup-section-title">&#9876; Войска на точке:</div>
                 ${troopsHtml}
-                ${addFormHtml}
             `;
         }
 
