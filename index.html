@@ -1267,6 +1267,12 @@
             document.getElementById('login-overlay').classList.add('hidden');
             document.getElementById('app').style.display = 'flex';
 
+            // Force Leaflet to recalculate map size
+            setTimeout(() => {
+                map.invalidateSize();
+                console.log('Map size recalculated after showing app');
+            }, 50);
+
             const user = getCurrentUser();
             if (user) {
                 applyFactionUI();
