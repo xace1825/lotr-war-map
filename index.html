@@ -1041,19 +1041,8 @@
         }
 
         #logout-btn:hover { background: rgba(0,0,0,0.4); }
-    
-        /* Road glow effect - CSS instead of duplicate polyline */
-        .road-line {
-            filter: drop-shadow(0 0 4px rgba(201, 162, 39, 0.3));
-            transition: filter 0.2s ease;
-        }
 
-        .road-line:hover {
-            filter: drop-shadow(0 0 6px rgba(201, 162, 39, 0.5));
-            stroke: #d4af37;
-            cursor: pointer;
-        }
-\n</style>
+</style>
 </head>
 <body>
     <!-- Login Overlay -->
@@ -1854,60 +1843,36 @@
         }
         loadWaypoints();
 
-        // === OPTIMIZED ROADS LOADER ===
+        // === ROADS LOADER ===
         function loadRoads() {
             const roadGroup = L.featureGroup();
 
             fetch('roads.json')
                 .then(r => r.json())
                 .then(roads => {
-                    const roadEntries = Object.entries(roads);
-                    let loadedCount = 0;
+                    for (const [key, road] of Object.entries(roads)) {
+                        road.paths.forEach(path => {
+                            if (path.length < 2) return;
 
-                    // Process roads in batches (lazy load)
-                    const batchSize = 20;
-                    let currentBatch = 0;
-
-                    function loadBatch() {
-                        const start = currentBatch * batchSize;
-                        const end = Math.min(start + batchSize, roadEntries.length);
-                        const batch = roadEntries.slice(start, end);
-
-                        batch.forEach(([key, road]) => {
-                            road.paths.forEach(path => {
-                                if (path.length < 2) return;
-
-                                // SINGLE polyline with CSS glow (no duplicate!)
-                                const polyline = L.polyline(path, {
-                                    color: '#c9a227',
-                                    weight: 2,
-                                    opacity: 0.7,
-                                    lineJoin: 'round',
-                                    lineCap: 'round',
-                                    className: 'road-line'
-                                });
-
-                                // Add popup once per road
-                                if (path === road.paths[0]) {
-                                    polyline.bindPopup(`<b style="color:#c9a227">${road.name}</b><br><small>${key}</small>`);
-                                }
-
-                                polyline.addTo(roadGroup);
+                            // Main road line (single, no glow)
+                            const polyline = L.polyline(path, {
+                                color: '#c9a227',
+                                weight: 2,
+                                opacity: 0.7,
+                                lineJoin: 'round',
+                                lineCap: 'round'
                             });
+
+                            // Add popup once per road (not per path!)
+                            if (path === road.paths[0]) {
+                                polyline.bindPopup(`<b style="color:#c9a227">${road.name}</b><br><small>${key}</small>`);
+                            }
+
+                            polyline.addTo(roadGroup);
                         });
-
-                        loadedCount += batch.length;
-                        currentBatch++;
-
-                        if (currentBatch * batchSize < roadEntries.length) {
-                            requestAnimationFrame(loadBatch);
-                        } else {
-                            roadGroup.addTo(map);
-                            console.log(`✓ Loaded ${roadEntries.length} roads (optimized: lazy load + CSS glow)`);
-                        }
                     }
-
-                    loadBatch();
+                    roadGroup.addTo(map);
+                    console.log(`✓ Loaded ${Object.keys(roads).length} roads (simple version)`);
                 })
                 .catch(e => console.error('Failed to load roads:', e));
         }
