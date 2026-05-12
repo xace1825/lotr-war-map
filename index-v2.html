@@ -419,7 +419,8 @@
         <button class="btn" id="save-limits" style="margin-top:20px;">💾 Сохранить</button>
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">// v4: cache bust
+    </script>
     <script>
 // Faction data
         const FACTIONS = [
@@ -1168,6 +1169,8 @@
 
         // Load roads after map is initialized
         loadRoads();
+    // v4: cache bust
     </script>
 </body>
 </html>
+
