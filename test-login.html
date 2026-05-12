@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login</title>
+</head>
+<body>
+    <div id="login">
+        <h2>Вход</h2>
+        <input type="text" id="username" placeholder="Логин">
+        <input type="password" id="password" placeholder="Пароль">
+        <button onclick="login()">Войти</button>
+        <div id="list"></div>
+    </div>
+    <script>
+        const FACTIONS = [
+            { id: 'GONDOR', name: 'Гондор', color: '#4169E1' },
+            { id: 'ROHAN', name: 'Рохан', color: '#228B22' }
+        ];
+        
+        // DOM ready
+        document.addEventListener('DOMContentLoaded', function() {
+            const list = document.getElementById('list');
+            FACTIONS.forEach(f => {
+                const div = document.createElement('div');
+                div.innerHTML = '<span style="color:'+f.color+'">●</span> ' + f.name;
+                div.onclick = function() {
+                    document.getElementById('username').value = f.id;
+                    document.getElementById('password').value = f.id;
+                };
+                list.appendChild(div);
+            });
+        });
+        
+        function login() {
+            alert('Вход: ' + document.getElementById('username').value);
+        }
+    </script>
+</body>
+</html>
