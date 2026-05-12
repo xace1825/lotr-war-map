@@ -538,7 +538,7 @@
         }
 
         function showApp() {
-            document.getElementById('login-overlay').classList.add('hidden');
+            document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app').style.display = 'flex';
 
             // Force Leaflet to recalculate map size
@@ -1199,10 +1199,11 @@
                 })
                 .catch(e => console.error('Failed to load roads:', e));
         }
+        // Initialize the app
+        init();
+
+        // Load roads after map is initialized
         loadRoads();
-        
-        // Initialize the app - but call checkAuth directly to show login
-        checkAuth();
     </script>
 </body>
 </html>
