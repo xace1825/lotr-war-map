@@ -335,13 +335,14 @@
             <h1 class="login-title">⚔️ Вход в Средиземье</h1>
             <p class="login-subtitle">Выберите фракцию и введите пароль</p>
             
-            <label class="form-label">Фракция</label>
-            <div id="login-factions-list" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:15px;max-height:200px;overflow-y:auto;"></div>
+            <div class="form-group">
+                <label class="form-label">Фракция / Логин</label>
+                <input type="text" class="form-input" id="login-username" placeholder="Введите название фракции" autocomplete="off">
+            </div>
             
-            <input type="hidden" id="login-faction">
             <div class="form-group">
                 <label class="form-label">Пароль</label>
-                <input type="password" class="form-input" id="login-password" placeholder="Пароль фракции">
+                <input type="password" class="form-input" id="login-password" placeholder="Введите пароль">
             </div>
             
             <div id="login-error" style="color:#8b0000;text-align:center;margin-bottom:15px;display:none;">
@@ -349,6 +350,11 @@
             </div>
             
             <button class="btn" id="login-btn">🛡️ Войти</button>
+            
+            <div style="margin-top:20px;padding-top:15px;border-top:2px double var(--gold-dark);">
+                <p style="color:var(--gold-dark);font-size:0.75rem;font-weight:700;margin-bottom:8px;text-align:center;">Доступные фракции:</p>
+                <div id="login-factions-list" style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;max-height:200px;overflow-y:auto;padding:0 4px;"></div>
+            </div>
         </div>
     </div>
 
@@ -535,6 +541,7 @@
             }
 
             errorEl.textContent = 'Неверный логин или пароль';
+            errorEl.style.display = 'block';
         }
 
         function showApp() {
@@ -616,68 +623,25 @@
                 showApp();
             } else {
                 document.getElementById('login-screen').style.display = 'flex';
-                // Clear and fill factions list
+                // Fill factions list
                 const list = document.getElementById('login-factions-list');
                 if (list) {
-                    list.innerHTML = ''; // Clear existing
-                    
-                    // Admin button
-                    const adminBtn = document.createElement('button');
-                    adminBtn.className = 'faction-btn btn-admin';
-                    adminBtn.innerHTML = '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#c9a227;margin-right:8px;border:1px solid #5a4a0a;"></span>Admin';
-                    adminBtn.onclick = function() {
-                        document.getElementById('login-faction').value = 'Admin';
-                        document.getElementById('login-password').value = '';
-                        document.getElementById('login-password').focus();
-                        // Update visual selection
-                        list.querySelectorAll('.faction-btn').forEach(b => {
-                            b.classList.remove('selected');
-                            if (b.classList.contains('btn-admin')) {
-                                b.style.background = '';
-                            }
-                        });
-                        adminBtn.classList.add('selected');
-                    };
-                    list.appendChild(adminBtn);
-                    
-                    // Faction buttons
-                    FACTIONS.forEach(function(f) {
-                        const btn = document.createElement('button');
-                        btn.className = 'faction-btn';
-                        btn.innerHTML = '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:'+f.color+';margin-right:8px;border:1px solid rgba(0,0,0,0.2);"></span>' + f.name;
-                        btn.onclick = function() {
-                            document.getElementById('login-faction').value = f.id;
-                            document.getElementById('login-password').value = f.id;
-                            document.getElementById('login-password').focus();
-                            // Update visual selection
-                            list.querySelectorAll('.faction-btn').forEach(function(b) {
-                                b.classList.remove('selected');
-                                b.style.background = '';
-                            });
-                            btn.classList.add('selected');
-                            btn.style.background = 'linear-gradient(180deg,'+f.color+' 0%,'+adjustColor(f.color,-50)+' 100%)';
-                            btn.style.color = '#fff';
-                        };
-                        list.appendChild(btn);
-                    });
+                    const adminItem = '<div style="font-size:0.7rem;color:var(--gold);padding:2px 0;display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:var(--gold);flex-shrink:0;"></span>Admin</div>';
+                    const items = FACTIONS.map(f => 
+                        '<div style="font-size:0.7rem;color:var(--ink-light);padding:2px 0;display:flex;align-items:center;gap:4px;cursor:pointer;" onclick="document.getElementById(\'login-username\').value=\''+f.id+'\';document.getElementById(\'login-password\').value=\''+f.id+'\';"><span style="width:8px;height:8px;border-radius:50%;background:'+f.color+';flex-shrink:0;"></span>'+f.name+'</div>'
+                    ).join('');
+                    list.innerHTML = adminItem + items;
                 }
-                // Focus password input
-                setTimeout(function() {
-                    const pwd = document.getElementById('login-password');
-                    if (pwd) pwd.focus();
-                }, 300);
-                // Bind enter key on password
-                const pwdInput = document.getElementById('login-password');
-                if (pwdInput) {
-                    pwdInput.addEventListener('keydown', function(e) {
-                        if (e.key === 'Enter') handleLogin();
-                    });
-                }
-                // Bind login button
-                const loginBtn = document.getElementById('login-btn');
-                if (loginBtn) {
-                    loginBtn.addEventListener('click', handleLogin);
-                }
+                // Focus username input
+                setTimeout(() => document.getElementById('login-username').focus(), 300);
+                // Bind enter key
+                document.getElementById('login-username').addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') document.getElementById('login-password').focus();
+                });
+                document.getElementById('login-password').addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') handleLogin();
+                });
+                document.getElementById('login-btn').addEventListener('click', handleLogin);
             }
         }
 
