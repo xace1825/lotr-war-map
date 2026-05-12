@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚔️ Карта Средиземья - LOTR Strategy</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --parchment: #f5e6c8;
+            --parchment-dark: #e8d4a8;
+            --parchment-shadow: #c9b896;
+            --ink: #2c1810;
+            --ink-light: #4a3428;
+            --gold: #c9a227;
+            --gold-bright: #e8c547;
+            --gold-dark: #8b6914;
+            --crimson: #8b0000;
+            --forest: #1b4d1b;
+            --ocean: #1e3a5f;
+            --shadow: rgba(44, 24, 16, 0.4);
+            --shadow-heavy: rgba(44, 24, 16, 0.7);
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Cinzel', serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: var(--parchment);
+            overflow: hidden;
+        }
+        
+        #app { display: flex; height: 100vh; }
+        
+        /* Login Screen */
+        #login-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+        
+        .login-container {
+            background: var(--parchment);
+            padding: 40px;
+            border-radius: 8px;
+            border: 3px double var(--gold-dark);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .login-title {
+            font-family: 'Cinzel Decorative', cursive;
+            font-size: 1.8rem;
+            color: var(--ink);
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .login-subtitle {
+            text-align: center;
+            color: var(--ink-light);
+            font-size: 0.9rem;
+            margin-bottom: 25px;
+        }
+        
+        .form-group { margin-bottom: 15px; }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--ink);
+            font-size: 0.85rem;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--gold-dark);
+            border-radius: 6px;
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
+            background: var(--parchment);
+            color: var(--ink);
+        }
+        
+        .faction-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .faction-btn {
+            padding: 12px;
+            border: 2px solid var(--gold-dark);
+            border-radius: 6px;
+            background: var(--parchment-dark);
+            color: var(--ink);
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            display: flex;
+            align-items: center;
+        }
+        
+        .faction-btn:hover {
+            background: var(--parchment-shadow);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+        
+        .faction-btn.selected {
+            color: #fff;
+            border-color: var(--ink);
+            box-shadow: 0 0 10px var(--shadow-heavy);
+        }
+        
+        .btn-admin {
+            background: linear-gradient(180deg, #e8c547 0%, #c9a227 100%);
+            font-weight: bold;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 12px 16px;
+            margin: 8px 0;
+            border: 2px solid var(--gold-dark);
+            border-radius: 4px;
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(180deg, #d4af37 0%, #c9a227 30%, #b8941d 50%, #8b6914 100%);
+            color: var(--ink);
+        }
+        
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px var(--shadow-heavy); }
+        
+        /* Sidebar */
+        #sidebar {
+            width: 320px;
+            background: var(--parchment);
+            color: var(--ink);
+            border-right: 3px solid var(--gold-dark);
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+            box-shadow: 4px 0 20px var(--shadow-heavy);
+        }
+        
+        #sidebar-header {
+            padding: 20px;
+            background: linear-gradient(180deg, var(--gold-dark) 0%, var(--gold) 50%, var(--gold-dark) 100%);
+            color: var(--parchment);
+            text-align: center;
+            border-bottom: 3px double var(--ink);
+        }
+        
+        #sidebar-header h1 {
+            font-family: 'Cinzel Decorative', cursive;
+            font-size: 1.3rem;
+        }
+        
+        .sidebar-section {
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(139, 105, 20, 0.3);
+        }
+        
+        .sidebar-section-title {
+            font-family: 'Cinzel Decorative', cursive;
+            font-size: 0.75rem;
+            color: var(--gold-dark);
+            margin-bottom: 12px;
+        }
+        
+        /* Map */
+        #map-container { flex: 1; position: relative; }
+        #map { width: 100%; height: 100%; }
+        
+        /* Legend */
+        .legend-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+        }
+        
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 1px solid var(--ink);
+        }
+        
+        /* Loading */
+        #loading {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+        
+        .loading-ornament {
+            font-size: 4rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+        
+        #loading-text {
+            font-family: 'Cinzel Decorative', cursive;
+            font-size: 1.5rem;
+            margin-top: 20px;
+        }
+        
+        /* Limits Panel */
+        #limits-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--parchment);
+            border: 3px double var(--gold-dark);
+            border-radius: 8px;
+            padding: 30px;
+            z-index: 2000;
+            display: none;
+            min-width: 350px;
+        }
+        
+        #limits-panel.visible { display: block; }
+        
+        .overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 1999;
+            display: none;
+        }
+        
+        .overlay.visible { display: block; }
+        
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+        
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--parchment-shadow);
+            transition: .4s;
+            border-radius: 26px;
+            border: 1px solid var(--gold-dark);
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background: var(--gold);
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider { background: var(--gold); }
+        input:checked + .slider:before { transform: translateX(24px); }
+        
+        /* User badge */
+        #user-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--parchment);
+            color: var(--ink);
+            padding: 10px 20px;
+            border: 2px solid var(--gold-dark);
+            border-radius: 6px;
+            z-index: 1000;
+            font-size: 0.85rem;
+        }
+        
+        #logout-btn {
+            background: none;
+            border: none;
+            color: var(--crimson);
+            cursor: pointer;
+            margin-left: 10px;
+            font-family: 'Cinzel', serif;
+        }
+        
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <div class="loading-ornament">⚔️</div>
+        <div id="loading-text">Загрузка Карты Средиземья...</div>
+    </div>
+
+    <div id="login-screen">
+        <div class="login-container">
+            <h1 class="login-title">⚔️ Вход в Средиземье</h1>
+            <p class="login-subtitle">Выберите фракцию и введите пароль</p>
+            
+            <div class="form-group">
+                <label class="form-label">Фракция / Логин</label>
+                <input type="text" class="form-input" id="login-username" placeholder="Введите название фракции" autocomplete="off">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Пароль</label>
+                <input type="password" class="form-input" id="login-password" placeholder="Введите пароль">
+            </div>
+            
+            <div id="login-error" style="color:#8b0000;text-align:center;margin-bottom:15px;display:none;">
+                Неверный пароль
+            </div>
+            
+            <button class="btn" id="login-btn">🛡️ Войти</button>
+            
+            <div style="margin-top:20px;padding-top:15px;border-top:2px double var(--gold-dark);">
+                <p style="color:var(--gold-dark);font-size:0.75rem;font-weight:700;margin-bottom:8px;text-align:center;">Доступные фракции:</p>
+                <div id="login-factions-list-v2" style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;max-height:200px;overflow-y:auto;padding:0 4px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="app" class="hidden">
+        <div id="user-badge">
+            <span>Фракция: <strong id="current-faction-name">-</strong></span>
+            <button id="logout-btn">Выйти</button>
+        </div>
+
+        <aside id="sidebar">
+            <div id="sidebar-header">
+                <h1>⚔️ Карта Средиземья</h1>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">⚜️ Управление картой</div>
+                
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                    <span style="font-size:0.85rem;">🛤️ Дороги</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggle-roads" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+                    <span style="font-size:0.85rem;">📍 Точки</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggle-waypoints" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <button class="btn" id="reset-view">🔄 Центрировать</button>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">⚜️ Управление отрядами</div>
+                <button class="btn" id="clear-troops" style="background:linear-gradient(180deg,#cc4444 0%,#aa3333 100%);color:#fff;">❌ Убрать все отряды</button>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">⚜️ Лимиты фракций</div>
+                <button class="btn" id="open-limits">⚡ Настроить</button>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">⚜️ Легенда</div>
+                <div class="legend-grid" id="faction-legend"></div>
+            </div>
+        </aside>
+        
+        <main id="map-container">
+            <div id="map"></div>
+        </main>
+    </div>
+
+    <div class="overlay" id="limits-overlay"></div>
+    <div id="limits-panel">
+        <h2 style="font-family:"Cinzel Decorative",cursive;color:var(--ink);margin-bottom:20px;text-align:center;">⚡ Лимиты фракций</h2>
+        <div id="limits-content"></div>
+        <button class="btn" id="save-limits" style="margin-top:20px;">💾 Сохранить</button>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">// v5: new version
+    </script>
+    <script>
+// Faction data
+        const FACTIONS = [
+            { id: 'GONDOR', name: 'Гондор', color: '#4169E1' },
+            { id: 'ROHAN', name: 'Рохан', color: '#228B22' },
+            { id: 'MORDOR', name: 'Мордор', color: '#8B0000' },
+            { id: 'ISENGARD', name: 'Изенгард', color: '#6A0DAD' },
+            { id: 'HIGH_ELF', name: 'Высшие эльфы', color: '#DAA520' },
+            { id: 'WOOD_ELF', name: 'Лесное кор-во', color: '#2E8B57' },
+            { id: 'LOTHLORIEN', name: 'Лотлориэн', color: '#FFD700' },
+            { id: 'DOL_GULDUR', name: 'Дол Гулдур', color: '#4B0082' },
+            { id: 'DALE', name: 'Дейл', color: '#CD853F' },
+            { id: 'DUNLAND', name: 'Дунланд', color: '#8B4513' },
+            { id: 'RHUDAUR', name: 'Рудаур', color: '#696969' },
+            { id: 'RANGER_NORTH', name: 'Арнор', color: '#4682B4' },
+            { id: 'BREE', name: 'Бри', color: '#A0522D' },
+            { id: 'HOBBIT', name: 'Хоббиты', color: '#7CFC00' },
+            { id: 'DORWINION', name: 'Дорвинион', color: '#D2691E' },
+            { id: 'NEAR_HARAD', name: 'Бл. Харад', color: '#B8860B' },
+            { id: 'ANGMAR', name: 'Ангмар', color: '#2F4F4F' },
+            { id: 'GUNDABAD', name: 'Гундабад', color: '#778899' },
+            { id: 'DURINS_FOLK', name: 'Дурин', color: '#B8860B' },
+            { id: 'FANGORN', name: 'Фангорн', color: '#228B22' }
+        ];
+
+        // Helper to darken color for gradient effects
+        function adjustColor(hex, amount) {
+            hex = hex.replace('#', '');
+            const r = Math.max(0, Math.min(255, parseInt(hex.substring(0,2), 16) + amount));
+            const g = Math.max(0, Math.min(255, parseInt(hex.substring(2,4), 16) + amount));
+            const b = Math.max(0, Math.min(255, parseInt(hex.substring(4,6), 16) + amount));
+            return '#' + [r,g,b].map(x => x.toString(16).padStart(2, '0')).join('');
+        }
+
+        // Faction color map (used for waypoint markers)
+        const FACTION_COLORS = {
+            'GONDOR':'#4169E1','ROHAN':'#228B22','MORDOR':'#8B0000','ISENGARD':'#6A0DAD',
+            'HIGH_ELF':'#DAA520','WOOD_ELF':'#2E8B57','LOTHLORIEN':'#FFD700',
+            'DOL_GULDUR':'#4B0082','DALE':'#CD853F','DUNLAND':'#8B4513',
+            'RHUDAUR':'#696969','RANGER_NORTH':'#4682B4','BREE':'#A0522D',
+            'HOBBIT':'#7CFC00','DORWINION':'#D2691E','NEAR_HARAD':'#B8860B',
+            'ANGMAR':'#2F4F4F','GUNDABAD':'#778899','DURINS_FOLK':'#B8860B',
+            'FANGORN':'#228B22','BLUE_MOUNTAINS':'#4682B4','WIND_MOUNTAINS':'#708090',
+            'TAURETHRIM':'#006400','MORWAITH':'#8B7355','LOSSOTH':'#ADD8E6',
+            'RED_MOUNTAINS':'#B22222','HALF_TROLL':'#8B008B','FACELESS':'#363636',
+            'UTUMNO':'#1C1C1C'
+        };
+
+        const MC_CENTER_X = 32000;
+        const MC_CENTER_Y = -16000;
+        const MC_SCALE = 0.0001;
+
+        // State
+        let editMode = false;
+        let map;
+        let troopsData = {};
+        let waypointMarkers = {};
+        let currentUser = null;
+
+        window.editMode = editMode;
+        window.waypoints = null;
+
+        // === AUTH SYSTEM ===
+        const VALID_FACTIONS = [
+            'GONDOR','ROHAN','MORDOR','ISENGARD','HIGH_ELF','WOOD_ELF','LOTHLORIEN',
+            'DOL_GULDUR','DALE','DUNLAND','RHUDAUR','RANGER_NORTH','BREE','HOBBIT',
+            'DORWINION','NEAR_HARAD','ANGMAR','GUNDABAD','DURINS_FOLK','FANGORN',
+            'BLUE_MOUNTAINS','WIND_MOUNTAINS','TAURETHRIM','MORWAITH','LOSSOTH',
+            'RED_MOUNTAINS','HALF_TROLL','FACELESS','UTUMNO'
+        ];
+
+        function getCurrentUser() {
+            if (currentUser) return currentUser;
+            const saved = sessionStorage.getItem('lotr-user');
+            if (saved) {
+                try {
+                    currentUser = JSON.parse(saved);
+                    return currentUser;
+                } catch(e) {}
+            }
+            return null;
+        }
+
+        function setCurrentUser(user) {
+            currentUser = user;
+            sessionStorage.setItem('lotr-user', JSON.stringify(user));
+        }
+
+        function clearCurrentUser() {
+            currentUser = null;
+            sessionStorage.removeItem('lotr-user');
+        }
+
+        function handleLogin() {
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+            const errorEl = document.getElementById('login-error');
+
+            if (!username || !password) {
+                errorEl.textContent = 'Введите логин и пароль';
+                return;
+            }
+
+            const upperUser = username.toUpperCase();
+            const upperPass = password.toUpperCase();
+
+            // Admin check
+            if (upperUser === 'ADMIN' && upperPass === 'ADMIN') {
+                setCurrentUser({ username: 'Admin', factionId: null, isAdmin: true });
+                showApp();
+                return;
+            }
+
+            // Faction check
+            if (VALID_FACTIONS.includes(upperUser) && upperUser === upperPass) {
+                setCurrentUser({ username: upperUser, factionId: upperUser, isAdmin: false });
+                showApp();
+                return;
+            }
+
+            errorEl.textContent = 'Неверный логин или пароль';
+            errorEl.style.display = 'block';
+        }
+
+        function showApp() {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app').style.display = 'flex';
+
+            // Force Leaflet to recalculate map size
+            setTimeout(() => {
+                map.invalidateSize();
+                console.log('Map size recalculated after showing app');
+            }, 50);
+
+            const user = getCurrentUser();
+            if (user) {
+                applyFactionUI();
+            }
+        }
+
+        function applyFactionUI() {
+            const user = getCurrentUser();
+            if (!user) return;
+
+            // Show user name
+            const nameEl = document.getElementById('user-name-display');
+            if (user.isAdmin) {
+                nameEl.textContent = '👑 Админ';
+            } else {
+                const faction = FACTIONS.find(f => f.id === user.factionId);
+                nameEl.textContent = faction ? faction.name : user.factionId;
+            }
+
+            // Welcome banner
+            const banner = document.getElementById('welcome-banner');
+            if (user.isAdmin) {
+                banner.textContent = 'Привет, Админ!';
+            } else {
+                const faction = FACTIONS.find(f => f.id === user.factionId);
+                banner.textContent = `Привет, ${faction ? faction.name : user.factionId}!`;
+            }
+            banner.classList.add('show');
+
+            // Hide/show controls based on role
+            const controlsSection = document.getElementById('controls-section');
+            const limitsPanel = document.getElementById('limits-panel');
+
+            if (!user.isAdmin) {
+                // Hide edit toggle and clear button for non-admin
+                controlsSection.style.display = 'none';
+                // Hide limits panel for non-admin
+                limitsPanel.style.display = 'none';
+                // Non-admin always in edit mode
+                editMode = true;
+                window.editMode = true;
+            } else {
+                // Admin: show everything, edit mode from toggle
+                controlsSection.style.display = '';
+                limitsPanel.style.display = '';
+                editMode = document.getElementById('edit-toggle').checked;
+                window.editMode = editMode;
+                document.getElementById('edit-indicator').classList.toggle('active', editMode);
+                document.getElementById('map').style.cursor = editMode ? 'crosshair' : 'grab';
+            }
+
+            // Refresh popups, badges, and sidebar with filtered data
+            updateWaypointBadges();
+            refreshWaypointPopups();
+            updateSidebar();
+        }
+
+        function logout() {
+            clearCurrentUser();
+            location.reload();
+        }
+
+        // Check session on load
+        function checkAuth() {
+            const user = getCurrentUser();
+            if (user) {
+                showApp();
+            } else {
+                document.getElementById('login-screen').style.display = 'flex';
+                // Fill factions list
+                const list = document.getElementById('login-factions-list-v2');
+                if (list) {
+                    const adminItem = '<div style="font-size:0.7rem;color:var(--gold);padding:2px 0;display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:var(--gold);flex-shrink:0;"></span>Admin</div>';
+                    const items = FACTIONS.map(f => 
+                        '<div style="font-size:0.7rem;color:var(--ink-light);padding:2px 0;display:flex;align-items:center;gap:4px;cursor:pointer;" onclick="document.getElementById(\'login-username\').value=\''+f.id+'\';document.getElementById(\'login-password\').value=\''+f.id+'\';"><span style="width:8px;height:8px;border-radius:50%;background:'+f.color+';flex-shrink:0;"></span>'+f.name+'</div>'
+                    ).join('');
+                    list.innerHTML = adminItem + items;
+                }
+                // Focus username input
+                setTimeout(() => document.getElementById('login-username').focus(), 300);
+                // Bind enter key
+                document.getElementById('login-username').addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') document.getElementById('login-password').focus();
+                });
+                document.getElementById('login-password').addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') handleLogin();
+                });
+                document.getElementById('login-btn').addEventListener('click', handleLogin);
+            }
+        }
+
+        // === SIDEBAR TOGGLE ===
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const hamburger = document.getElementById('hamburger');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('collapsed');
+            hamburger.classList.toggle('hidden', !sidebar.classList.contains('collapsed'));
+            overlay.classList.toggle('active', !sidebar.classList.contains('collapsed'));
+        }
+
+        // === INIT ===
+        function init() {
+            initMap();
+            loadTroops();
+            setupEventListeners();
+            buildFactionLegend();
+            renderLimitsList();
+            checkAuth();
+        }
+
+        function initMap() {
+            map = L.map('map', {
+                crs: L.CRS.Simple,
+                minZoom: 1,
+                maxZoom: 5,
+                zoomControl: false
+            }).setView([-51.90625, 88.28125], 4);
+
+            // Custom zoom controls
+            const zoomDiv = document.createElement('div');
+            zoomDiv.className = 'custom-zoom';
+            zoomDiv.innerHTML = `
+                <button class="zoom-btn" onclick="map.zoomIn()" title="Приблизить">+</button>
+                <button class="zoom-btn" onclick="map.zoomOut()" title="Отдалить">&minus;</button>
+            `;
+            document.getElementById('map').appendChild(zoomDiv);
+
+            L.tileLayer('https://maplotr.enchald.com/tiles/{z}_{x}_{y}.png', {
+                attribution: 'Enchald LOTR Server',
+                minZoom: 1,
+                maxZoom: 5,
+                noWrap: true
+            }).addTo(map);
+        }
+
+        function buildFactionLegend() {
+            const container = document.getElementById('faction-legend');
+            container.innerHTML = FACTIONS.map(f =>
+                `<div class="legend-item">
+                    <span class="legend-dot" style="background:${f.color};box-shadow:0 0 4px ${f.color};"></span>
+                    ${f.name}
+                </div>`
+            ).join('');
+        }
+
+        function renderLimitsList() {
+            const container = document.getElementById('limits-list');
+            if (!container) return;
+            const user = getCurrentUser();
+            if (user && !user.isAdmin) {
+                container.innerHTML = '<div style="color:#484f58;text-align:center;padding:10px;">Только для администратора</div>';
+                return;
+            }
+            container.innerHTML = FACTIONS.map(f => {
+                const limit = getFactionLimit(f.id);
+                const current = getFactionTotalTroops(f.id);
+                const pct = limit > 0 ? Math.min(100, (current / limit) * 100) : 0;
+                const barColor = pct > 90 ? '#ff4444' : pct > 70 ? '#ff9900' : f.color;
+                return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:0.75rem;padding:4px 6px;border-radius:6px;border:1px solid ${f.color}33;background:${f.color}0a;">
+                    <span class="legend-dot" style="background:${f.color};box-shadow:0 0 6px ${f.color};flex-shrink:0;width:10px;height:10px;"></span>
+                    <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${f.color};">${f.name}</span>
+                    ${limit > 0 ? `<div style="width:40px;height:4px;background:#1a1a2e;border-radius:2px;overflow:hidden;flex-shrink:0;">
+                        <div style="width:${pct}%;height:100%;background:${barColor};border-radius:2px;transition:width 0.3s;"></div>
+                    </div>` : ''}
+                    <span style="color:${f.color};font-weight:bold;min-width:30px;text-align:right;text-shadow:0 0 8px ${f.color}66;">${current}</span>
+                    <span style="color:#555;">/</span>
+                    <input type="number" value="${limit || ''}" placeholder="∞" min="0"
+                        data-faction="${f.id}"
+                        class="limit-input"
+                        style="width:50px;padding:2px 4px;border:1px solid ${f.color}44;border-radius:4px;background:#0d1117;color:${f.color};font-size:0.7rem;text-align:center;">
+                </div>`;
+            }).join('');
+        }
+        
+        function saveAllLimits() {
+            const inputs = document.querySelectorAll('.limit-input');
+            inputs.forEach(inp => {
+                setFactionLimit(inp.dataset.faction, inp.value);
+            });
+            renderLimitsList();
+            alert('✅ Лимиты сохранены!');
+        }
+        
+        window.updateLimitInfo = function() {
+            const sel = document.getElementById('add-troops-faction');
+            const info = document.getElementById('limit-info');
+            if (!sel || !info) return;
+            const fid = sel.value;
+            const lim = getFactionLimit(fid);
+            const cur = getFactionTotalTroops(fid);
+            if (lim > 0) {
+                const avail = lim - cur;
+                info.innerHTML = `<span style="color:${avail > 0 ? '#c9a227' : '#ff4444'}">⚡ ${getFactionName(fid)}: ${cur}/${lim} (доступно: ${avail > 0 ? avail : 0})</span>`;
+            } else {
+                info.innerHTML = `<span style="color:#4a4;">⚡ ${getFactionName(fid)}: лимит не установлен</span>`;
+            }
+        };
+        
+        function toggleLimitsPanel() {
+            const body = document.getElementById('limits-body');
+            const icon = document.getElementById('limits-toggle-icon');
+            body.classList.toggle('collapsed');
+            icon.textContent = body.classList.contains('collapsed') ? '▲' : '▼';
+        }
+        window.toggleLimitsPanel = toggleLimitsPanel;
+
+        // === TROOPS STORAGE ===
+        function loadTroops() {
+            const saved = localStorage.getItem('lotr-troops');
+            if (saved) {
+                try {
+                    troopsData = JSON.parse(saved);
+                    updateWaypointBadges();
+                    updateSidebar();
+                } catch (e) {
+                    console.error('Failed to load troops:', e);
+                    troopsData = {};
+                }
+            }
+        }
+
+        function saveTroops() {
+            localStorage.setItem('lotr-troops', JSON.stringify(troopsData));
+            updateWaypointBadges();
+            updateSidebar();
+        }
+
+        function getWaypointTroops(waypointName) {
+            return troopsData[waypointName] || [];
+        }
+
+        function getTotalTroopsForWaypoint(waypointName) {
+            return getWaypointTroops(waypointName).reduce((sum, t) => sum + t.troops, 0);
+        }
+
+        function addTroops(waypointName, factionId, troopsCount) {
+            // Проверяем лимит фракции
+            const limit = getFactionLimit(factionId);
+            const current = getFactionTotalTroops(factionId);
+            const existing = troopsData[waypointName]?.find(t => t.factionId === factionId);
+            const alreadyOnPoint = existing ? existing.troops : 0;
+            const available = limit - (current - alreadyOnPoint);
+            
+            if (limit > 0 && troopsCount > available) {
+                alert(`⚠️ Лимит фракции превышен!\n${getFactionName(factionId)}: ${current}/${limit}\nМожно добавить ещё: ${available > 0 ? available : 0}`);
+                return false;
+            }
+            
+            if (!troopsData[waypointName]) {
+                troopsData[waypointName] = [];
+            }
+            const existingEntry = troopsData[waypointName].find(t => t.factionId === factionId);
+            if (existingEntry) {
+                existingEntry.troops += troopsCount;
+            } else {
+                troopsData[waypointName].push({ factionId, troops: troopsCount });
+            }
+            saveTroops();
+            return true;
+        }
+
+        function removeTroops(waypointName, factionId) {
+            if (troopsData[waypointName]) {
+                troopsData[waypointName] = troopsData[waypointName].filter(t => t.factionId !== factionId);
+                if (troopsData[waypointName].length === 0) {
+                    delete troopsData[waypointName];
+                }
+                saveTroops();
+            }
+        }
+
+        function formatTroops(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num.toString();
+        }
+
+        // === FACTION LIMITS ===
+        let factionLimits = {};
+        
+        function loadFactionLimits() {
+            const saved = localStorage.getItem('lotr-faction-limits');
+            if (saved) {
+                try { factionLimits = JSON.parse(saved); } catch(e) { factionLimits = {}; }
+            }
+        }
+        
+        function saveFactionLimits() {
+            localStorage.setItem('lotr-faction-limits', JSON.stringify(factionLimits));
+        }
+        
+        function getFactionLimit(factionId) {
+            return factionLimits[factionId] || 0;
+        }
+        
+        function setFactionLimit(factionId, limit) {
+            factionLimits[factionId] = parseInt(limit) || 0;
+            saveFactionLimits();
+        }
+        
+        function getFactionTotalTroops(factionId) {
+            let total = 0;
+            for (const wpName in troopsData) {
+                const entry = troopsData[wpName].find(t => t.factionId === factionId);
+                if (entry) total += entry.troops;
+            }
+            return total;
+        }
+        
+        function getFactionName(factionId) {
+            const f = FACTIONS.find(f => f.id === factionId);
+            return f ? f.name : factionId;
+        }
+        
+        loadFactionLimits();
+
+        function clearAllTroops() {
+            if (Object.keys(troopsData).length === 0) return;
+            if (confirm('Вы уверены, что хотите удалить все войска?')) {
+                troopsData = {};
+                saveTroops();
+            }
+        }
+
+        function focusWaypoint(waypointName) {
+            const wp = window.waypoints && window.waypoints.find(w => w.n === waypointName);
+            if (wp && waypointMarkers[wp.n]) {
+                map.setView(wp.ll, 5);
+                waypointMarkers[wp.n].openPopup();
+            }
+        }
+
+        // === WAYPOINT MARKERS WITH BADGES ===
+        function createWaypointIcon(wp) {
+            const c = FACTION_COLORS[wp.f] || '#aaa';
+            let totalTroops = getTotalTroopsForWaypoint(wp.n);
+            // Non-admin: badge shows only own faction troops
+            const user = getCurrentUser();
+            if (user && !user.isAdmin && user.factionId) {
+                const ownEntry = getWaypointTroops(wp.n).find(t => t.factionId === user.factionId);
+                totalTroops = ownEntry ? ownEntry.troops : 0;
+            }
+            const badgeHtml = totalTroops > 0
+                ? `<div class="wp-badge">${formatTroops(totalTroops)}</div>`
+                : '';
+            return L.divIcon({
+                className: 'wp-icon',
+                html: `<div class="wp-dot" style="background:${c};box-shadow:0 0 6px ${c};color:${c};">${badgeHtml}</div>`,
+                iconSize: [8, 8],
+                iconAnchor: [4, 4]
+            });
+        }
+
+        function updateWaypointBadges() {
+            if (!window.waypoints) return;
+            window.waypoints.forEach(wp => {
+                const marker = waypointMarkers[wp.n];
+                if (marker) {
+                    marker.setIcon(createWaypointIcon(wp));
+                }
+            });
+        }
+
+        // === SIDEBAR UPDATE ===
+        function updateSidebar() {
+            const container = document.getElementById('markers-list');
+            const user = getCurrentUser();
+            let pointsWithTroops = Object.entries(troopsData);
+
+            // Filter by faction for non-admin
+            if (user && !user.isAdmin && user.factionId) {
+                pointsWithTroops = pointsWithTroops
+                    .map(([pointName, troops]) => {
+                        const filtered = troops.filter(t => t.factionId === user.factionId);
+                        return [pointName, filtered];
+                    })
+                    .filter(([_, troops]) => troops.length > 0);
+            }
+
+            if (pointsWithTroops.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                        </svg>
+                        <p>Нет войск</p>
+                        <p class="hint">Включите редактирование и кликните на точку</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = pointsWithTroops.map(([pointName, troops]) => {
+                const wp = window.waypoints && window.waypoints.find(w => w.n === pointName);
+                const totalTroops = troops.reduce((sum, t) => sum + t.troops, 0);
+
+                const troopsList = troops.map(t => {
+                    const faction = FACTIONS.find(f => f.id === t.factionId);
+                    return `<div class="troop-entry">
+                        <span class="troop-dot" style="background:${faction?.color || '#aaa'};color:${faction?.color || '#aaa'};"></span>
+                        <span class="troop-name">${faction?.name || t.factionId}</span>
+                        <span class="troop-count">${formatTroops(t.troops)}</span>
+                    </div>`;
+                }).join('');
+
+                return `
+                    <div class="marker-item" data-point="${pointName}">
+                        <div class="marker-header">
+                            <div class="marker-name">${pointName}</div>
+                            <div class="marker-troops">${formatTroops(totalTroops)}</div>
+                        </div>
+                        <div class="marker-coords">
+                            ${wp ? `x: ${wp.mc[0]} &middot; y: ${wp.mc[1]}` : ''}
+                        </div>
+                        <div class="marker-troops-list">${troopsList}</div>
+                        <div class="marker-actions">
+                            <button class="btn-find" onclick="focusWaypoint('${pointName}')">&#128065; Найти на карте</button>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        // === EVENT LISTENERS ===
+        function setupEventListeners() {
+            document.getElementById('edit-toggle').addEventListener('change', (e) => {
+                editMode = e.target.checked;
+                window.editMode = editMode;
+                document.getElementById('edit-indicator').classList.toggle('active', editMode);
+                document.getElementById('map').style.cursor = editMode ? 'crosshair' : 'grab';
+                refreshWaypointPopups();
+            });
+
+            document.getElementById('clear-all-btn').addEventListener('click', clearAllTroops);
+
+            window.focusWaypoint = focusWaypoint;
+            window.removeTroopsAtPoint = removeTroopsAtPoint;
+            window.addTroopsAtPoint = addTroopsAtPoint;
+        }
+
+        // === POPUP CONTENT ===
+        function addTroopsAtPoint(waypointName) {
+            const factionId = document.getElementById('add-troops-faction').value;
+            const troopsCount = parseInt(document.getElementById('add-troops-count').value) || 0;
+            if (troopsCount > 0) {
+                const success = addTroops(waypointName, factionId, troopsCount);
+                refreshWaypointPopups();
+            }
+        }
+
+        function removeTroopsAtPoint(waypointName, factionId) {
+            removeTroops(waypointName, factionId);
+            refreshWaypointPopups();
+        }
+
+        function refreshWaypointPopups() {
+            if (!window.waypoints) return;
+            window.waypoints.forEach(wp => {
+                const marker = waypointMarkers[wp.n];
+                if (marker) {
+                    marker.setPopupContent(createWaypointPopupContent(wp));
+                }
+            });
+        }
+
+        function createWaypointPopupContent(wp) {
+            const user = getCurrentUser();
+            let troops = getWaypointTroops(wp.n);
+            const c = FACTION_COLORS[wp.f] || '#aaa';
+
+            // Filter troops for non-admin
+            if (user && !user.isAdmin && user.factionId) {
+                troops = troops.filter(t => t.factionId === user.factionId);
+            }
+
+            // Troops list
+            let troopsHtml = '';
+            if (troops.length > 0) {
+                troopsHtml = troops.map(t => {
+                    const faction = FACTIONS.find(f => f.id === t.factionId);
+                    const canDelete = user ? (user.isAdmin || user.factionId === t.factionId) : false;
+                    const deleteBtn = canDelete
+                        ? `<button class="popup-troop-delete" onclick="removeTroopsAtPoint('${wp.n}', '${t.factionId}')">Удалить</button>`
+                        : '';
+                    return `<div class="popup-troop-entry">
+                        <span class="popup-troop-dot" style="background:${faction?.color || '#aaa'};"></span>
+                        <span class="popup-troop-name">${faction?.name || t.factionId}</span>
+                        <span class="popup-troop-count">${formatTroops(t.troops)}</span>
+                        ${deleteBtn}
+                    </div>`;
+                }).join('');
+            } else {
+                troopsHtml = '<div class="popup-no-troops">Нет войск</div>';
+            }
+
+            // Add form — non-admin: always shown, faction locked
+            const showAddForm = editMode;
+            if (showAddForm) {
+                const isLocked = user && !user.isAdmin && user.factionId;
+                const factionOptions = isLocked
+                    ? `<option value="${user.factionId}" selected>${getFactionName(user.factionId)}</option>`
+                    : FACTIONS.map(f => {
+                        const lim = getFactionLimit(f.id);
+                        const cur = getFactionTotalTroops(f.id);
+                        return `<option value="${f.id}">${f.name}${lim > 0 ? ' ('+cur+'/'+lim+')' : ''}</option>`;
+                    }).join('');
+
+                return `
+                    <div class="popup-title" style="color:${c};">${wp.n}</div>
+                    <div style="text-align:center;">
+                        <div class="popup-faction">${wp.f}</div>
+                        <div class="popup-coords">x: ${wp.mc[0]} | y: ${wp.mc[1]}</div>
+                        <div class="popup-desc">${wp.d}</div>
+                    </div>
+                    <hr class="popup-divider">
+                    <div class="popup-section-title">&#9876; Войска на точке:</div>
+                    ${troopsHtml}
+                    <hr class="popup-divider">
+                    <div class="popup-section-title">&#10133; Добавить войска:</div>
+                    <div class="popup-add-form">
+                        <select id="add-troops-faction" ${isLocked ? 'disabled' : ''} onchange="updateLimitInfo()">
+                            ${factionOptions}
+                        </select>
+                        <div class="popup-add-row">
+                            <input type="number" id="add-troops-count" placeholder="Кол-во" min="1">
+                            <button class="popup-add-btn" onclick="addTroopsAtPoint('${wp.n}')">Добавить</button>
+                        </div>
+                        <div id="limit-info" style="font-size:0.7rem;color:#888;margin-top:4px;"></div>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="popup-title" style="color:${c};">${wp.n}</div>
+                <div style="text-align:center;">
+                    <div class="popup-faction">${wp.f}</div>
+                    <div class="popup-coords">x: ${wp.mc[0]} | y: ${wp.mc[1]}</div>
+                    <div class="popup-desc">${wp.d}</div>
+                </div>
+                <hr class="popup-divider">
+                <div class="popup-section-title">&#9876; Войска на точке:</div>
+                ${troopsHtml}
+            `;
+        }
+
+        // Start
+        init();
+
+        // === WAYPOINTS LOADER ===
+        function loadWaypoints() {
+            fetch('waypoints.json')
+                .then(r => r.json())
+                .then(data => {
+                    const wpGroup = L.featureGroup();
+                    window.waypoints = data;
+                    data.forEach(wp => {
+                        const icon = createWaypointIcon(wp);
+                        const m = L.marker(wp.ll, {icon});
+                        m.bindTooltip(
+                            `<b>${wp.n}</b><span class="coords-small">x: ${wp.mc[0]} &middot; y: ${wp.mc[1]}</span>`,
+                            {direction: 'top', offset: [0, -10]}
+                        );
+                        m.on('click', function() {
+                            m.unbindPopup();
+                            m.bindPopup(createWaypointPopupContent(wp), {maxWidth: 320});
+                            m.openPopup();
+                        });
+                        m.addTo(wpGroup);
+                        waypointMarkers[wp.n] = m;
+                    });
+                    wpGroup.addTo(map);
+                    console.log('Loaded ' + data.length + ' waypoints');
+                })
+                .catch(e => console.error('Failed to load waypoints:', e));
+        }
+        loadWaypoints();
+
+        // === ROADS LOADER ===
+        function loadRoads() {
+            const roadGroup = L.featureGroup();
+
+            fetch('roads.json')
+                .then(r => r.json())
+                .then(roads => {
+                    for (const [key, road] of Object.entries(roads)) {
+                        road.paths.forEach(path => {
+                            if (path.length < 2) return;
+
+                            // Main road line (single, no glow)
+                            const polyline = L.polyline(path, {
+                                color: '#c9a227',
+                                weight: 2,
+                                opacity: 0.7,
+                                lineJoin: 'round',
+                                lineCap: 'round'
+                            });
+
+                            // Add popup once per road (not per path!)
+                            if (path === road.paths[0]) {
+                                polyline.bindPopup(`<b style="color:#c9a227">${road.name}</b><br><small>${key}</small>`);
+                            }
+
+                            polyline.addTo(roadGroup);
+                        });
+                    }
+                    roadGroup.addTo(map);
+                    console.log(`✓ Loaded ${Object.keys(roads).length} roads (simple version)`);
+                })
+                .catch(e => console.error('Failed to load roads:', e));
+        }
+        // Initialize the app
+        init();
+
+        // Load roads after map is initialized
+        loadRoads();
+    // v5: new version
+    </script>
+</body>
+</html>
+
