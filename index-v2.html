@@ -1164,11 +1164,18 @@
                 })
                 .catch(e => console.error('Failed to load roads:', e));
         }
-        // Initialize the app
-        init();
-
-        // Load roads after map is initialized
-        loadRoads();
+        // Initialize auth first - this shows login or triggers app
+        checkAuth();
+        
+        // Only init map if already logged in
+        if (getCurrentUser()) {
+            initMap();
+            loadTroops();
+            setupEventListeners();
+            buildFactionLegend();
+            renderLimitsList();
+            loadRoads();
+        }
     // v4: cache bust
     </script>
 </body>
