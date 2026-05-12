@@ -98,20 +98,35 @@
         }
         
         .faction-btn {
-            padding: 10px;
+            padding: 12px;
             border: 2px solid var(--gold-dark);
             border-radius: 6px;
             background: var(--parchment-dark);
             color: var(--ink);
             font-family: 'Cinzel', serif;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             cursor: pointer;
             transition: all 0.3s;
+            text-align: left;
+            display: flex;
+            align-items: center;
         }
         
-        .faction-btn:hover, .faction-btn.selected {
-            background: var(--gold);
-            color: var(--parchment);
+        .faction-btn:hover {
+            background: var(--parchment-shadow);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+        
+        .faction-btn.selected {
+            color: #fff;
+            border-color: var(--ink);
+            box-shadow: 0 0 10px var(--shadow-heavy);
+        }
+        
+        .btn-admin {
+            background: linear-gradient(180deg, #e8c547 0%, #c9a227 100%);
+            font-weight: bold;
         }
         
         .btn {
@@ -600,61 +615,69 @@
             if (user) {
                 showApp();
             } else {
-                document.getElementById('login-overlay').classList.remove('hidden');
-                // Fill factions list with buttons
+                document.getElementById('login-screen').style.display = 'flex';
+                // Clear and fill factions list
                 const list = document.getElementById('login-factions-list');
                 if (list) {
+                    list.innerHTML = ''; // Clear existing
+                    
                     // Admin button
                     const adminBtn = document.createElement('button');
-                    adminBtn.className = 'faction-btn';
-                    adminBtn.style.cssText = 'background:linear-gradient(180deg,#c9a227 0%,#8b6914 100%);color:#fff;font-weight:bold;border-color:#5a4a0a;';
-                    adminBtn.innerHTML = '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#fff;margin-right:6px;"></span>Admin';
-                    adminBtn.onclick = () => {
+                    adminBtn.className = 'faction-btn btn-admin';
+                    adminBtn.innerHTML = '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#c9a227;margin-right:8px;border:1px solid #5a4a0a;"></span>Admin';
+                    adminBtn.onclick = function() {
                         document.getElementById('login-faction').value = 'Admin';
                         document.getElementById('login-password').value = '';
                         document.getElementById('login-password').focus();
                         // Update visual selection
                         list.querySelectorAll('.faction-btn').forEach(b => {
-                            b.style.background = b.classList.contains('btn-admin') ? 'linear-gradient(180deg,#c9a227 0%,#8b6914 100%)' : '';
                             b.classList.remove('selected');
+                            if (b.classList.contains('btn-admin')) {
+                                b.style.background = '';
+                            }
                         });
                         adminBtn.classList.add('selected');
-                        adminBtn.style.background = 'linear-gradient(180deg,#e8c547 0%,#c9a227 100%)';
                     };
-                    adminBtn.classList.add('btn-admin');
                     list.appendChild(adminBtn);
                     
                     // Faction buttons
-                    FACTIONS.forEach(f => {
+                    FACTIONS.forEach(function(f) {
                         const btn = document.createElement('button');
                         btn.className = 'faction-btn';
-                        btn.innerHTML = '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+f.color+';margin-right:6px;"></span>' + f.name;
-                        btn.onclick = () => {
+                        btn.innerHTML = '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:'+f.color+';margin-right:8px;border:1px solid rgba(0,0,0,0.2);"></span>' + f.name;
+                        btn.onclick = function() {
                             document.getElementById('login-faction').value = f.id;
                             document.getElementById('login-password').value = f.id;
                             document.getElementById('login-password').focus();
                             // Update visual selection
-                            list.querySelectorAll('.faction-btn').forEach(b => {
-                                b.style.background = b.classList.contains('btn-admin') ? 'linear-gradient(180deg,#c9a227 0%,#8b6914 100%)' : '';
+                            list.querySelectorAll('.faction-btn').forEach(function(b) {
                                 b.classList.remove('selected');
+                                b.style.background = '';
                             });
                             btn.classList.add('selected');
-                            btn.style.background = 'linear-gradient(180deg,'+f.color+' 0%,'+adjustColor(f.color,-40)+' 100%)';
+                            btn.style.background = 'linear-gradient(180deg,'+f.color+' 0%,'+adjustColor(f.color,-50)+' 100%)';
                             btn.style.color = '#fff';
                         };
                         list.appendChild(btn);
                     });
                 }
                 // Focus password input
-                setTimeout(() => document.getElementById('login-password').focus(), 300);
-                // Bind enter key
-                document.getElementById('login-username').addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') document.getElementById('login-password').focus();
-                });
-                document.getElementById('login-password').addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') handleLogin();
-                });
-                document.getElementById('login-btn').addEventListener('click', handleLogin);
+                setTimeout(function() {
+                    const pwd = document.getElementById('login-password');
+                    if (pwd) pwd.focus();
+                }, 300);
+                // Bind enter key on password
+                const pwdInput = document.getElementById('login-password');
+                if (pwdInput) {
+                    pwdInput.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter') handleLogin();
+                    });
+                }
+                // Bind login button
+                const loginBtn = document.getElementById('login-btn');
+                if (loginBtn) {
+                    loginBtn.addEventListener('click', handleLogin);
+                }
             }
         }
 
