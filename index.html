@@ -2384,8 +2384,9 @@
         window.selectWaypointIcon = function(waypointName, iconType) {
             setWaypointCustomIcon(waypointName, iconType);
             const marker = waypointMarkers[waypointName];
-            if (marker) {
-                marker.setPopupContent(createWaypointPopupContent(window.waypoints.find(w => w.n === waypointName)));
+            const wp = window.waypoints && window.waypoints.find(w => w.n === waypointName);
+            if (marker && wp) {
+                marker.setPopupContent(createWaypointPopupContent(wp));
                 marker.openPopup();
             }
         };
