@@ -99,6 +99,12 @@
             background: rgba(201, 162, 39, 0.2);
         }
 
+        .sidebar-section-title::before {
+            content: '✦';
+            font-size: 0.5rem;
+            opacity: 0.6;
+        }
+
         /* Toggle switch */
         .toggle-container {
             display: flex;
@@ -590,19 +596,60 @@
             border-color: #484f58;
             color: #8b949e;
         }
-
-        /* === WAYPOINT MARKERS === */
+        /* === WAYPOINT MARKERS WITH BADGES === */
         .wp-icon { background: none !important; border: none !important; }
 
-        .wp-dot {
+        .wp-marker {
             position: relative;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            border: 2px solid rgba(255,255,255,0.5);
-            transition: all 0.3s ease;
+            width: 20px;
+            height: 20px;
             cursor: pointer;
+            transition: all 0.3s ease;
+            filter: drop-shadow(0 0 3px var(--faction-color, #c9a227));
             animation: markerAppear 0.4s ease;
+        }
+
+        .wp-marker::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--faction-color, #c9a227) 0%, transparent 70%);
+            opacity: 0.15;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        .wp-marker:hover::before {
+            opacity: 0.3;
+            width: 60px;
+            height: 60px;
+        }
+
+        .wp-marker:hover {
+            transform: scale(1.3);
+            filter: drop-shadow(0 0 8px var(--faction-color, #c9a227));
+        }
+
+        .wp-icon-inner {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .wp-icon-inner svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
         }
 
         @keyframes markerAppear {
@@ -610,15 +657,10 @@
             to { transform: scale(1); opacity: 1; }
         }
 
-        .wp-dot:hover {
-            transform: scale(1.8);
-            border-color: #c9a227;
-        }
-
-        .wp-badge {
+        .wp-marker .wp-badge {
             position: absolute;
             bottom: -8px;
-            right: -8px;
+            right: -10px;
             background: linear-gradient(135deg, #c9a227, #8b6914);
             color: #0d1117;
             border-radius: 8px;
@@ -629,16 +671,34 @@
             min-width: 18px;
             text-align: center;
             box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            z-index: 3;
         }
 
-        /* Pulse animation for hovered waypoints */
-        @keyframes wpPulse {
-            0%, 100% { box-shadow: 0 0 4px currentColor; }
-            50% { box-shadow: 0 0 12px currentColor, 0 0 20px currentColor; }
-        }
-
-        .wp-dot.pulsing {
+        .wp-marker.pulsing {
             animation: wpPulse 1s ease infinite;
+        }
+
+        @keyframes wpPulse {
+            0%, 100% { filter: drop-shadow(0 0 3px var(--faction-color)); }
+            50% { filter: drop-shadow(0 0 12px var(--faction-color)) drop-shadow(0 0 20px var(--faction-color)); }
+        }
+
+        /* === FLOATING NUMBERS === */
+        .float-number {
+            position: absolute;
+            z-index: 2000;
+            font-family: 'Cinzel', serif;
+            font-weight: bold;
+            font-size: 0.9rem;
+            pointer-events: none;
+            animation: floatUp 1.2s ease forwards;
+            text-shadow: 0 0 8px currentColor;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            70% { opacity: 1; }
+            100% { transform: translateY(-40px) scale(1.2); opacity: 0; }
         }
 
         /* === ROADS GLOW === */
@@ -847,6 +907,19 @@
             border: none;
             border-top: 1px solid rgba(201, 162, 39, 0.15);
             margin: 12px 0;
+            position: relative;
+        }
+
+        .popup-divider::after {
+            content: '✦';
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #c9a227;
+            font-size: 0.6rem;
+            background: #161b22;
+            padding: 0 6px;
         }
 
         .popup-coords {
@@ -1265,9 +1338,24 @@
             'UTUMNO':'#1C1C1C'
         };
 
-        const MC_CENTER_X = 32000;
-        const MC_CENTER_Y = -16000;
-        const MC_SCALE = 0.0001;
+        const WAYPOINT_ICONS = {
+            castle: `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M2 22h20V10l-3-3V4l-3-3-3 3v3l-3 3v12zm5-8h2v2H7zm8 0h2v2h-2z"/></svg>`,
+            city:   `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M4 22h16v-8h-2V8h-4v6H8V8H4v6H2v8h2zm6-6h2v2h-2z"/></svg>`,
+            port:   `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C8 2 5 5 5 9c0 4 4 9 7 13 3-4 7-9 7-13 0-4-3-7-7-7zm0 9a2 2 0 110-4 2 2 0 010 4z"/></svg>`,
+            tower:  `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M7 2h10v4h-2v14h2v2H7v-2h2V6H7V2zm5 6h2v2h-2z"/></svg>`,
+            gate:   `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M2 22h20V8l-4-6H6L2 8v14zm10-12a2 2 0 110-4 2 2 0 010 4z"/></svg>`,
+            fort:   `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M4 22h16V12l-3-4-5 2-5-2-3 4v10z"/></svg>`
+        };
+
+        function getWaypointIconType(name) {
+            const lower = (name || '').toLowerCase();
+            if (/порт|гавань|пристань|озер/.test(lower)) return 'port';
+            if (/крепость|башня|столица|стен|дунхарро/.test(lower)) return 'castle';
+            if (/город|посел|деревня|фортпост/.test(lower)) return 'city';
+            if (/перевал|дорог|мост|ворота|брод/.test(lower)) return 'gate';
+            if (/прибежище|логов|фелагард/.test(lower)) return 'fort';
+            return 'tower';
+        }
 
         // State
         let editMode = false;
@@ -1748,10 +1836,21 @@
             }
         }
 
+        function showFloatingNumber(latlng, value, isPositive) {
+            const point = map.latLngToContainerPoint(latlng);
+            const div = document.createElement('div');
+            div.className = 'float-number';
+            div.textContent = (isPositive ? '+' : '−') + formatTroops(Math.abs(value));
+            div.style.left = point.x + 'px';
+            div.style.top = (point.y - 20) + 'px';
+            div.style.color = isPositive ? '#4CAF50' : '#ff4444';
+            document.getElementById('map').appendChild(div);
+            setTimeout(() => div.remove(), 1200);
+        }
         function focusWaypoint(waypointName) {
             const wp = window.waypoints && window.waypoints.find(w => w.n === waypointName);
             if (wp && waypointMarkers[wp.n]) {
-                map.setView(wp.ll, 5);
+                map.flyTo(wp.ll, 5, { duration: 1.5 });
                 waypointMarkers[wp.n].openPopup();
             }
         }
@@ -1759,6 +1858,8 @@
         // === WAYPOINT MARKERS WITH BADGES ===
         function createWaypointIcon(wp) {
             const c = FACTION_COLORS[wp.f] || '#aaa';
+            const iconType = getWaypointIconType(wp.n);
+            const iconSvg = WAYPOINT_ICONS[iconType] || WAYPOINT_ICONS.tower;
             let totalTroops = getTotalTroopsForWaypoint(wp.n);
             // Non-admin: badge shows only own faction troops
             const user = getCurrentUser();
@@ -1771,9 +1872,12 @@
                 : '';
             return L.divIcon({
                 className: 'wp-icon',
-                html: `<div class="wp-dot" style="background:${c};box-shadow:0 0 6px ${c};color:${c};">${badgeHtml}</div>`,
-                iconSize: [8, 8],
-                iconAnchor: [4, 4]
+                html: `<div class="wp-marker" style="color:${c};--faction-color:${c};" data-type="${iconType}">
+                    <div class="wp-icon-inner">${iconSvg}</div>
+                    ${badgeHtml}
+                </div>`,
+                iconSize: [20, 20],
+                iconAnchor: [10, 18]
             });
         }
 
@@ -1871,12 +1975,22 @@
             const stance = document.getElementById('add-troops-stance').value || 'attack';
             if (troopsCount > 0) {
                 const success = addTroops(waypointName, factionId, troopsCount, stance);
+                if (success) {
+                    const wp = window.waypoints?.find(w => w.n === waypointName);
+                    if (wp) showFloatingNumber(wp.ll, troopsCount, true);
+                }
                 refreshWaypointPopups();
             }
         }
 
-        function removeTroopsAtPoint(waypointName, factionId) {
-            removeTroops(waypointName, factionId);
+        function removeTroopsAtPoint(waypointName, factionId, stance) {
+            const troops = getWaypointTroops(waypointName).find(t => t.factionId === factionId && (t.stance || 'attack') === stance);
+            const removedCount = troops ? troops.troops : 0;
+            removeTroops(waypointName, factionId, stance);
+            if (removedCount > 0) {
+                const wp = window.waypoints?.find(w => w.n === waypointName);
+                if (wp) showFloatingNumber(wp.ll, removedCount, false);
+            }
             refreshWaypointPopups();
         }
 
