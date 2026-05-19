@@ -18,25 +18,31 @@
 
         #app { display: flex; height: 100vh; }
 
-        /* === SIDEBAR === */
+        /* === SIDEBAR — ANCIENT TOME "Переплёт" === */
         #sidebar {
             width: 300px;
-            background: #121518;
-            border-right: 2px solid rgba(139, 105, 20, 0.6);
+            background: #15131a;
+            background-image:
+                url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+            border-right: 3px solid #4a3320;
+            border-image: linear-gradient(180deg, #6b4c2a 0%, #3d2b16 50%, #6b4c2a 100%) 1;
             display: flex;
             flex-direction: column;
             z-index: 1000;
-            box-shadow: 6px 0 30px rgba(0,0,0,0.8), inset -1px 0 0 rgba(201, 162, 39, 0.1);
+            box-shadow:
+                inset -8px 0 20px rgba(0,0,0,0.6),
+                8px 0 30px rgba(0,0,0,0.7);
             transition: transform 0.3s ease, width 0.3s ease;
             position: relative;
         }
 
-        /* Пергаментная текстура */
-        #sidebar::before {
+        /* Пергаментная вставка внутри боковой панели */
+        #sidebar::after {
             content: '';
             position: absolute;
-            inset: 0;
-            background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"), linear-gradient(180deg, rgba(30,25,15,0.3) 0%, transparent 50%, rgba(20,18,12,0.5) 100%);
+            inset: 8px;
+            border: 1px solid rgba(139, 105, 20, 0.3);
+            border-radius: 4px;
             pointer-events: none;
             z-index: 1;
         }
@@ -49,31 +55,29 @@
 
         #sidebar-header {
             padding: 16px 20px;
-            background: linear-gradient(180deg, rgba(201,162,39,0.2) 0%, rgba(139,105,20,0.15) 100%),
-                        linear-gradient(135deg, #1a1d22 0%, #15181d 100%);
-            border-bottom: 2px solid rgba(139, 105, 20, 0.4);
-            color: #c9a227;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            background: linear-gradient(180deg, #2a1f12 0%, #1c1510 100%);
+            border-bottom: 3px double #6b4c2a;
             position: relative;
             z-index: 2;
         }
 
-        #sidebar-header::after {
+        /* Золотые уголки — тиснение переплёта */
+        #sidebar-header::before {
             content: '';
             position: absolute;
-            bottom: -2px;
-            left: 10%;
-            right: 10%;
-            height: 2px;
-            background: radial-gradient(ellipse, rgba(201,162,39,0.4) 0%, transparent 70%);
+            top: 4px; left: 4px; right: 4px; bottom: 4px;
+            border: 1px solid rgba(201, 162, 39, 0.25);
+            pointer-events: none;
+            z-index: 1;
         }
 
         #sidebar-header .title-block h1 {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             font-weight: 700;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
+            color: #c9a227;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            font-family: 'Cinzel Decorative', serif;
         }
 
         #sidebar-header .title-block p {
@@ -869,16 +873,18 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 8px;
-            background: #121518;
-            border-radius: 8px;
+            padding: 8px 10px;
+            background: rgba(20,24,28,0.4);
+            border-radius: 6px;
             margin-bottom: 6px;
             transition: all 0.3s ease;
-            border: 1px solid transparent;
+            border-left: 3px solid var(--faction-color, #666);
+            box-shadow: inset 4px 0 8px var(--faction-color, transparent);
         }
 
         .popup-troop-entry:hover {
-            border-color: rgba(201, 162, 39, 0.2);
+            background: rgba(20,24,28,0.7);
+            border-left-width: 5px;
         }
 
         .popup-troop-dot {
@@ -2231,15 +2237,16 @@
 
             function troopEntry(t) {
                 const faction = FACTIONS.find(f => f.id === t.factionId);
+                const fColor = faction?.color || '#aaa';
                 const stanceLabel = t.stance === 'defense' ? '🛡️' : '⚔️';
                 const stanceColor = t.stance === 'defense' ? '#4CAF50' : '#ff4444';
                 const canDelete = user ? (user.isAdmin || user.factionId === t.factionId) : false;
                 const deleteBtn = canDelete
                     ? `<button class="popup-troop-delete" onclick="removeTroopsAtPoint('${wp.n}', '${t.factionId}', '${t.stance || 'attack'}')">Удалить</button>`
                     : '';
-                return `<div class="popup-troop-entry">
-                    <span class="popup-troop-dot" style="background:${faction?.color || '#aaa'};"></span>
-                    <span class="popup-troop-name">${stanceLabel} ${faction?.name || t.factionId}</span>
+                return `<div class="popup-troop-entry" style="--faction-color:${fColor};border-left-color:${fColor};box-shadow:inset 4px 0 8px ${fColor}22;">
+                    <span class="popup-troop-dot" style="background:${fColor};"></span>
+                    <span class="popup-troop-name" style="color:${fColor};">${stanceLabel} ${faction?.name || t.factionId}</span>
                     <span class="popup-troop-count">${formatTroops(t.troops)}</span>
                     ${deleteBtn}
                 </div>`;
@@ -2374,6 +2381,29 @@
                             m.unbindPopup();
                             m.bindPopup(createWaypointPopupContent(wp), {maxWidth: 320});
                             m.openPopup();
+                        });
+                        m.on('popupopen', function(e) {
+                            const color = FACTION_COLORS[wp.f] || '#c9a227';
+                            const wrapper = e.popup._container.querySelector('.leaflet-popup-content-wrapper');
+                            const tip = e.popup._container.querySelector('.leaflet-popup-tip');
+                            if (wrapper) {
+                                wrapper.style.borderTopColor = color;
+                                wrapper.style.borderColor = color + '4d'; // ~30% opacity hex
+                                wrapper.style.boxShadow = '0 12px 32px ' + color + '33';
+                            }
+                            if (tip) {
+                                tip.style.borderColor = color + '4d';
+                            }
+                        });
+                        m.on('popupclose', function(e) {
+                            const wrapper = e.popup._container.querySelector('.leaflet-popup-content-wrapper');
+                            const tip = e.popup._container.querySelector('.leaflet-popup-tip');
+                            if (wrapper) {
+                                wrapper.style.borderTopColor = '';
+                                wrapper.style.borderColor = '';
+                                wrapper.style.boxShadow = '';
+                            }
+                            if (tip) tip.style.borderColor = '';
                         });
                         m.addTo(wpGroup);
                         waypointMarkers[wp.n] = m;
