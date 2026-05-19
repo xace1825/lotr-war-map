@@ -833,6 +833,10 @@
                 font-size: 0.7rem;
             }
 
+            .header-actions {
+                gap: 4px;
+            }
+
             #sidebar-close {
                 width: 28px;
                 height: 28px;
@@ -1183,6 +1187,13 @@
             flex-shrink: 0;
         }
 
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
         #logout-btn {
             background: rgba(0,0,0,0.2);
             border: none;
@@ -1269,9 +1280,11 @@
                     </div>
                     <span class="user-name" id="user-name-display"></span>
                     <span id="troop-counter" style="font-size:0.65rem;color:#0d1117;background:rgba(0,0,0,0.15);padding:2px 8px;border-radius:10px;font-weight:700;"></span>
-                    <button id="logout-btn" onclick="logout()" title="Выйти">&#9211;</button>
                 </div>
-                <button id="sidebar-close" onclick="toggleSidebar()">&times;</button>
+                <div class="header-actions">
+                    <button id="logout-btn" onclick="logout()" title="Выйти">⏻</button>
+                    <button id="sidebar-close" onclick="toggleSidebar()">×</button>
+                </div>
             </div>
 
             <!-- Welcome banner -->
