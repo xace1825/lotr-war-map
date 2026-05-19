@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Карта Средиземья - LOTR Server</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cinzel+Decorative:wght@700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Cinzel', serif;
-            background: #0d1117;
-            color: #e8e8e8;
+            background: #0a0d0e;
+            color: #cbbfa3;
             overflow: hidden;
         }
 
@@ -21,14 +21,24 @@
         /* === SIDEBAR === */
         #sidebar {
             width: 300px;
-            background: #161b22;
-            border-right: 1px solid rgba(201, 162, 39, 0.3);
+            background: #121518;
+            border-right: 2px solid rgba(139, 105, 20, 0.6);
             display: flex;
             flex-direction: column;
             z-index: 1000;
-            box-shadow: 4px 0 24px rgba(0,0,0,0.6);
+            box-shadow: 6px 0 30px rgba(0,0,0,0.8), inset -1px 0 0 rgba(201, 162, 39, 0.1);
             transition: transform 0.3s ease, width 0.3s ease;
             position: relative;
+        }
+
+        /* Пергаментная текстура */
+        #sidebar::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"), linear-gradient(180deg, rgba(30,25,15,0.3) 0%, transparent 50%, rgba(20,18,12,0.5) 100%);
+            pointer-events: none;
+            z-index: 1;
         }
 
         #sidebar.collapsed {
@@ -39,11 +49,25 @@
 
         #sidebar-header {
             padding: 16px 20px;
-            background: linear-gradient(135deg, #c9a227 0%, #8b6914 100%);
-            color: #0d1117;
+            background: linear-gradient(180deg, rgba(201,162,39,0.2) 0%, rgba(139,105,20,0.15) 100%),
+                        linear-gradient(135deg, #1a1d22 0%, #15181d 100%);
+            border-bottom: 2px solid rgba(139, 105, 20, 0.4);
+            color: #c9a227;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            position: relative;
+            z-index: 2;
+        }
+
+        #sidebar-header::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 10%;
+            right: 10%;
+            height: 2px;
+            background: radial-gradient(ellipse, rgba(201,162,39,0.4) 0%, transparent 70%);
         }
 
         #sidebar-header .title-block h1 {
@@ -61,7 +85,7 @@
         #sidebar-close {
             background: rgba(0,0,0,0.2);
             border: none;
-            color: #0d1117;
+            color: #121518;
             width: 32px;
             height: 32px;
             border-radius: 8px;
@@ -78,7 +102,12 @@
         /* Sidebar sections */
         .sidebar-section {
             padding: 14px 16px;
-            border-bottom: 1px solid rgba(201, 162, 39, 0.15);
+            margin: 0 10px 10px;
+            background: rgba(20,24,28,0.6);
+            border: 1px solid rgba(139, 105, 20, 0.25);
+            border-radius: 8px;
+            position: relative;
+            z-index: 2;
         }
 
         .sidebar-section-title {
@@ -165,7 +194,7 @@
 
         input:checked + .slider:before {
             transform: translateX(22px);
-            background: #0d1117;
+            background: #121518;
         }
 
         /* Buttons */
@@ -211,7 +240,7 @@
             padding: 3px 6px;
             border-radius: 6px;
             font-size: 0.6rem;
-            color: #8b949e;
+            color: #9a8e7e;
             transition: background 0.3s ease;
         }
 
@@ -243,7 +272,7 @@
         #markers-list::-webkit-scrollbar-thumb { background: #c9a227; border-radius: 4px; }
 
         .marker-item {
-            background: #0d1117;
+            background: #121518;
             border: 1px solid rgba(201, 162, 39, 0.15);
             border-radius: 8px;
             padding: 12px;
@@ -252,7 +281,7 @@
         }
 
         .marker-item:hover {
-            background: #161b22;
+            background: #14181a;
             border-color: rgba(201, 162, 39, 0.4);
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             transform: translateY(-1px);
@@ -269,7 +298,7 @@
             flex: 1;
             font-weight: bold;
             font-size: 0.85rem;
-            color: #e8e8e8;
+            color: #cbbfa3;
         }
 
         .marker-troops {
@@ -280,7 +309,7 @@
 
         .marker-coords {
             font-size: 0.65rem;
-            color: #484f58;
+            color: #6b6560;
         }
 
         .marker-troops-list {
@@ -310,7 +339,7 @@
             box-shadow: 0 0 4px currentColor;
         }
 
-        .troop-name { flex: 1; color: #8b949e; }
+        .troop-name { flex: 1; color: #9a8e7e; }
 
         .troop-count { color: #c9a227; font-weight: bold; }
 
@@ -338,7 +367,7 @@
         .empty-state {
             text-align: center;
             padding: 40px 20px;
-            color: #484f58;
+            color: #6b6560;
         }
 
         .empty-state svg {
@@ -365,7 +394,7 @@
             width: 42px;
             height: 42px;
             border-radius: 10px;
-            background: #161b22;
+            background: #14181a;
             border: 1px solid rgba(201, 162, 39, 0.3);
             color: #c9a227;
             cursor: pointer;
@@ -379,7 +408,7 @@
 
         #hamburger:hover {
             background: #c9a227;
-            color: #0d1117;
+            color: #121518;
             border-color: #c9a227;
         }
 
@@ -417,7 +446,7 @@
             width: 38px;
             height: 38px;
             border-radius: 50%;
-            background: #161b22;
+            background: #14181a;
             border: 1px solid rgba(201, 162, 39, 0.4);
             color: #c9a227;
             cursor: pointer;
@@ -433,7 +462,7 @@
 
         .zoom-btn:hover {
             background: #c9a227;
-            color: #0d1117;
+            color: #121518;
             border-color: #c9a227;
             box-shadow: 0 0 16px rgba(201, 162, 39, 0.3);
         }
@@ -443,10 +472,10 @@
 
         /* === LEAFLET TOOLTIP STYLING === */
         .leaflet-tooltip {
-            background: #161b22 !important;
+            background: #14181a !important;
             border: 1px solid rgba(201, 162, 39, 0.5) !important;
             border-radius: 8px !important;
-            color: #e8e8e8 !important;
+            color: #cbbfa3 !important;
             font-family: 'Cinzel', serif !important;
             font-size: 0.75rem !important;
             padding: 8px 12px !important;
@@ -461,33 +490,33 @@
         }
 
         .leaflet-tooltip .coords-small {
-            color: #484f58;
+            color: #6b6560;
             font-size: 0.65rem;
         }
 
         .leaflet-tooltip-top:before {
-            border-top-color: #161b22 !important;
+            border-top-color: #14181a !important;
         }
 
         .leaflet-tooltip-bottom:before {
-            border-bottom-color: #161b22 !important;
+            border-bottom-color: #14181a !important;
         }
 
         .leaflet-tooltip-left:before {
-            border-left-color: #161b22 !important;
+            border-left-color: #14181a !important;
         }
 
         .leaflet-tooltip-right:before {
-            border-right-color: #161b22 !important;
+            border-right-color: #14181a !important;
         }
 
         /* === LEAFLET POPUP STYLING === */
         .leaflet-popup-content-wrapper {
-            background: #161b22 !important;
+            background: #14181a !important;
             border: 1px solid rgba(201, 162, 39, 0.3) !important;
             border-top: 3px solid #c9a227 !important;
             border-radius: 8px !important;
-            color: #e8e8e8 !important;
+            color: #cbbfa3 !important;
             box-shadow: 0 12px 32px rgba(0,0,0,0.6) !important;
             animation: popupFadeIn 0.3s ease !important;
         }
@@ -498,7 +527,7 @@
         }
 
         .leaflet-popup-tip {
-            background: #161b22 !important;
+            background: #14181a !important;
             border: 1px solid rgba(201, 162, 39, 0.3) !important;
             box-shadow: none !important;
         }
@@ -544,8 +573,8 @@
             padding: 8px 10px;
             border: 1px solid rgba(201, 162, 39, 0.3);
             border-radius: 8px;
-            background: #0d1117;
-            color: #e8e8e8;
+            background: #121518;
+            color: #cbbfa3;
             font-family: 'Cinzel', serif;
             font-size: 0.8rem;
             transition: all 0.3s ease;
@@ -564,7 +593,7 @@
             background: linear-gradient(135deg, #c9a227 0%, #8b6914 100%);
             border: none;
             border-radius: 8px;
-            color: #0d1117;
+            color: #121518;
             font-family: 'Cinzel', serif;
             font-size: 0.85rem;
             font-weight: 700;
@@ -584,7 +613,7 @@
             background: transparent;
             border: 1px solid #30363d;
             border-radius: 8px;
-            color: #484f58;
+            color: #6b6560;
             font-family: 'Cinzel', serif;
             font-size: 0.75rem;
             cursor: pointer;
@@ -593,8 +622,8 @@
         }
 
         .btn-cancel:hover {
-            border-color: #484f58;
-            color: #8b949e;
+            border-color: #6b6560;
+            color: #9a8e7e;
         }
         /* === WAYPOINT MARKERS WITH BADGES === */
         .wp-icon { background: none !important; border: none !important; }
@@ -662,12 +691,12 @@
             bottom: -8px;
             right: -10px;
             background: linear-gradient(135deg, #c9a227, #8b6914);
-            color: #0d1117;
+            color: #121518;
             border-radius: 8px;
             padding: 1px 5px;
             font-size: 0.55rem;
             font-weight: bold;
-            border: 2px solid #161b22;
+            border: 2px solid #14181a;
             min-width: 18px;
             text-align: center;
             box-shadow: 0 2px 8px rgba(0,0,0,0.4);
@@ -713,7 +742,7 @@
             left: 50%;
             transform: translateX(-50%);
             background: linear-gradient(135deg, #c9a227 0%, #8b6914 100%);
-            color: #0d1117;
+            color: #121518;
             padding: 8px 20px;
             border-radius: 20px;
             font-weight: 700;
@@ -777,7 +806,7 @@
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: #0d1117;
+            background: #121518;
             animation: editDotPulse 1s infinite;
         }
 
@@ -841,7 +870,7 @@
             align-items: center;
             gap: 8px;
             padding: 8px;
-            background: #0d1117;
+            background: #121518;
             border-radius: 8px;
             margin-bottom: 6px;
             transition: all 0.3s ease;
@@ -863,7 +892,7 @@
         .popup-troop-name {
             flex: 1;
             font-size: 0.8rem;
-            color: #8b949e;
+            color: #9a8e7e;
         }
 
         .popup-troop-count {
@@ -913,18 +942,18 @@
             transform: translateX(-50%);
             color: #c9a227;
             font-size: 0.6rem;
-            background: #161b22;
+            background: #14181a;
             padding: 0 6px;
         }
 
         .popup-coords {
-            color: #484f58;
+            color: #6b6560;
             font-size: 0.7rem;
             margin-bottom: 6px;
         }
 
         .popup-faction {
-            color: #484f58;
+            color: #6b6560;
             font-size: 0.65rem;
             margin-bottom: 4px;
         }
@@ -932,15 +961,15 @@
         .popup-desc {
             font-size: 0.75rem;
             line-height: 1.5;
-            color: #8b949e;
+            color: #9a8e7e;
         }
 
         .popup-no-troops {
             padding: 10px;
-            background: #0d1117;
+            background: #121518;
             border-radius: 8px;
             text-align: center;
-            color: #484f58;
+            color: #6b6560;
             font-size: 0.75rem;
         }
 
@@ -951,8 +980,8 @@
             padding: 8px 10px;
             border: 1px solid rgba(201, 162, 39, 0.3);
             border-radius: 8px;
-            background: #0d1117;
-            color: #e8e8e8;
+            background: #121518;
+            color: #cbbfa3;
             font-family: 'Cinzel', serif;
             font-size: 0.8rem;
             transition: all 0.3s ease;
@@ -978,7 +1007,7 @@
             background: linear-gradient(135deg, #c9a227, #8b6914);
             border: none;
             border-radius: 8px;
-            color: #0d1117;
+            color: #121518;
             font-family: 'Cinzel', serif;
             font-size: 0.75rem;
             font-weight: 700;
@@ -1001,7 +1030,7 @@
         }
         .icon-picker-btn {
             padding: 5px 4px;
-            background: #161b22;
+            background: #14181a;
             border: 1px solid rgba(201, 162, 39, 0.2);
             border-radius: 6px;
             color: #c9a227;
@@ -1023,7 +1052,7 @@
         }
         .icon-picker-btn .icon-label {
             font-size: 0.55rem;
-            color: #888;
+            color: #9a8e7e;
             margin-top: 2px;
             display: block;
         }
@@ -1032,7 +1061,7 @@
         #login-overlay {
             position: fixed;
             inset: 0;
-            background: #0d1117;
+            background: #121518;
             z-index: 9999;
             display: flex;
             align-items: center;
@@ -1046,7 +1075,7 @@
         }
 
         #login-modal {
-            background: #161b22;
+            background: #14181a;
             border: 1px solid rgba(201, 162, 39, 0.4);
             border-radius: 16px;
             padding: 40px 36px;
@@ -1072,7 +1101,7 @@
 
         #login-modal .login-subtitle {
             text-align: center;
-            color: #484f58;
+            color: #6b6560;
             font-size: 0.7rem;
             margin-bottom: 28px;
             letter-spacing: 2px;
@@ -1096,8 +1125,8 @@
             padding: 12px 14px;
             border: 1px solid rgba(201, 162, 39, 0.3);
             border-radius: 8px;
-            background: #0d1117;
-            color: #e8e8e8;
+            background: #121518;
+            color: #cbbfa3;
             font-family: 'Cinzel', serif;
             font-size: 0.85rem;
             transition: all 0.3s ease;
@@ -1123,7 +1152,7 @@
             background: linear-gradient(135deg, #c9a227 0%, #8b6914 100%);
             border: none;
             border-radius: 8px;
-            color: #0d1117;
+            color: #121518;
             font-family: 'Cinzel', serif;
             font-size: 0.9rem;
             font-weight: 700;
@@ -1207,7 +1236,7 @@
 
         .account-name {
             font-size: 0.85rem;
-            color: #e8e8e8;
+            color: #cbbfa3;
             font-weight: 700;
             white-space: nowrap;
             overflow: hidden;
@@ -1229,7 +1258,7 @@
 
         .account-stat {
             font-size: 0.75rem;
-            color: #888;
+            color: #9a8e7e;
         }
 
         .btn-logout {
@@ -1254,7 +1283,7 @@
         #logout-btn {
             background: rgba(0,0,0,0.2);
             border: none;
-            color: #0d1117;
+            color: #121518;
             width: 28px;
             height: 28px;
             border-radius: 6px;
@@ -1272,7 +1301,7 @@
 </style>
 </head>
 <body>
-    <div id="loading-overlay" style="position:fixed;inset:0;background:#0d1117;z-index:9998;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity 0.4s ease;">
+    <div id="loading-overlay" style="position:fixed;inset:0;background:#121518;z-index:9998;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity 0.4s ease;">
         <div style="width:48px;height:48px;border:3px solid rgba(201,162,39,0.2);border-top-color:#c9a227;border-radius:50%;animation:spin 1s linear infinite;"></div>
         <p style="color:#c9a227;font-size:0.9rem;letter-spacing:1px;">Загрузка карты...</p>
         <p id="loading-error" style="color:#ff4444;font-size:0.75rem;max-width:300px;text-align:center;display:none;"></p>
@@ -1678,7 +1707,7 @@
             const total = getFactionTotalTroops(user.factionId);
             const limit = getFactionLimit(user.factionId);
             const pct = limit > 0 ? Math.round((total / limit) * 100) : 0;
-            const color = pct > 90 ? '#ff4444' : pct > 70 ? '#ff9900' : '#e8e8e8';
+            const color = pct > 90 ? '#ff4444' : pct > 70 ? '#ff9900' : '#cbbfa3';
             counter.innerHTML = `⚔️ Войска: <span style="color:${color};font-weight:700;">${total}${limit > 0 ? '/' + limit : ''}</span>`;
         }
 
@@ -1794,7 +1823,7 @@
             if (!container) return;
             const user = getCurrentUser();
             if (user && !user.isAdmin) {
-                container.innerHTML = '<div style="color:#484f58;text-align:center;padding:10px;">Только для администратора</div>';
+                container.innerHTML = '<div style="color:#6b6560;text-align:center;padding:10px;">Только для администратора</div>';
                 return;
             }
             container.innerHTML = FACTIONS.map(f => {
@@ -1813,7 +1842,7 @@
                     <input type="number" value="${limit || ''}" placeholder="∞" min="0"
                         data-faction="${f.id}"
                         class="limit-input"
-                        style="width:50px;padding:2px 4px;border:1px solid ${f.color}44;border-radius:4px;background:#0d1117;color:${f.color};font-size:0.7rem;text-align:center;">
+                        style="width:50px;padding:2px 4px;border:1px solid ${f.color}44;border-radius:4px;background:#121518;color:${f.color};font-size:0.7rem;text-align:center;">
                 </div>`;
             }).join('');
         }
@@ -2249,7 +2278,7 @@
                     <div class="popup-add-form">
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
                             <span style="color:${stanceColor};font-size:0.8rem;font-weight:bold;">${stanceLabel}</span>
-                            <span style="color:#484f58;font-size:0.65rem;">(${selectedFaction === wpFaction ? 'своя точка' : 'чужая точка'})</span>
+                            <span style="color:#6b6560;font-size:0.65rem;">(${selectedFaction === wpFaction ? 'своя точка' : 'чужая точка'})</span>
                         </div>
                         <select id="add-troops-faction" ${isLocked ? 'disabled' : ''} onchange="onStancePreviewChange('${wp.n}', '${wp.f}')">
                             ${factionOptions}
@@ -2259,7 +2288,7 @@
                             <button class="popup-add-btn" onclick="addTroopsAtPoint('${wp.n}')">Добавить</button>
                         </div>
                         <input type="hidden" id="add-troops-stance" value="${autoStance}">
-                        <div id="limit-info" style="font-size:0.7rem;color:#888;margin-top:4px;"></div>
+                        <div id="limit-info" style="font-size:0.7rem;color:#9a8e7e;margin-top:4px;"></div>
                         <div id="stance-preview" style="margin-top:4px;"></div>
                         ${user && (user.isAdmin || user.factionId === wp.f) ? buildIconPickerHTML(wp.n) : ''}
                     </div>
@@ -2288,7 +2317,7 @@
             const stanceLabel = stance === 'defense' ? '🛡️ Оборона' : '⚔️ Нападение';
             const stanceColor = stance === 'defense' ? '#4CAF50' : '#ff4444';
             document.getElementById('add-troops-stance').value = stance;
-            preview.innerHTML = `<span style="color:${stanceColor};font-size:0.75rem;font-weight:bold;">${stanceLabel}</span> <span style="color:#484f58;font-size:0.65rem;">(${stance === 'defense' ? 'своя точка' : 'чужая точка'})</span>`;
+            preview.innerHTML = `<span style="color:${stanceColor};font-size:0.75rem;font-weight:bold;">${stanceLabel}</span> <span style="color:#6b6560;font-size:0.65rem;">(${stance === 'defense' ? 'своя точка' : 'чужая точка'})</span>`;
             updateLimitInfo();
         };
 
