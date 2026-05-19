@@ -213,6 +213,11 @@
             background: rgba(201, 162, 39, 0.1);
         }
 
+        .legend-item.active {
+            background: rgba(201, 162, 39, 0.25);
+            border: 1px solid rgba(201, 162, 39, 0.5);
+        }
+
         .legend-dot {
             width: 8px;
             height: 8px;
@@ -597,6 +602,12 @@
             border: 2px solid rgba(255,255,255,0.5);
             transition: all 0.3s ease;
             cursor: pointer;
+            animation: markerAppear 0.4s ease;
+        }
+
+        @keyframes markerAppear {
+            from { transform: scale(0); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
         }
 
         .wp-dot:hover {
@@ -626,7 +637,7 @@
             50% { box-shadow: 0 0 12px currentColor, 0 0 20px currentColor; }
         }
 
-        .wp-dot:hover {
+        .wp-dot.pulsing {
             animation: wpPulse 1s ease infinite;
         }
 
@@ -1045,6 +1056,16 @@
 </style>
 </head>
 <body>
+    <div id="loading-overlay" style="position:fixed;inset:0;background:#0d1117;z-index:9998;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity 0.4s ease;">
+        <div style="width:48px;height:48px;border:3px solid rgba(201,162,39,0.2);border-top-color:#c9a227;border-radius:50%;animation:spin 1s linear infinite;"></div>
+        <p style="color:#c9a227;font-size:0.9rem;letter-spacing:1px;">Загрузка карты...</p>
+        <p id="loading-error" style="color:#ff4444;font-size:0.75rem;max-width:300px;text-align:center;display:none;"></p>
+    </div>
+    <style>
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #loading-overlay.hidden { opacity: 0; pointer-events: none; }
+    </style>
+
     <!-- Login Overlay -->
     <div id="login-overlay">
         <div id="login-modal">
@@ -1056,8 +1077,24 @@
             </div>
             <div class="login-field">
                 <label>Пароль</label>
-                <input type="password" id="login-password" placeholder="Введите пароль">
+                <div style="position:relative;">
+                    <input type="password" id="login-password" placeholder="Введите пароль" style="padding-right:40px;">
+                    <button type="button" id="toggle-password" onclick="togglePasswordVisibility()" style="position:absolute;right:4px;top:50%;transform:translateY(-50%);background:none;border:none;color:#c9a227;cursor:pointer;font-size:1rem;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">👁️</button>
+                </div>
             </div>
+            <script>
+                function togglePasswordVisibility() {
+                    const inp = document.getElementById('login-password');
+                    const btn = document.getElementById('toggle-password');
+                    if (inp.type === 'password') {
+                        inp.type = 'text';
+                        btn.textContent = '🙈';
+                    } else {
+                        inp.type = 'password';
+                        btn.textContent = '👁️';
+                    }
+                }
+            </script>
             <div class="login-error" id="login-error"></div>
             <button id="login-btn">Войти</button>
             <div style="margin-top:20px;padding-top:15px;border-top:1px solid rgba(201,162,39,0.2);">
@@ -1083,6 +1120,7 @@
                         <p>Enchald LOTR Server</p>
                     </div>
                     <span class="user-name" id="user-name-display"></span>
+                    <span id="troop-counter" style="font-size:0.65rem;color:#0d1117;background:rgba(0,0,0,0.15);padding:2px 8px;border-radius:10px;font-weight:700;"></span>
                     <button id="logout-btn" onclick="logout()" title="Выйти">&#9211;</button>
                 </div>
                 <button id="sidebar-close" onclick="toggleSidebar()">&times;</button>
@@ -1266,17 +1304,24 @@
         function showApp() {
             document.getElementById('login-overlay').classList.add('hidden');
             document.getElementById('app').style.display = 'flex';
+            document.getElementById('loading-overlay').classList.add('hidden');
 
             // Force Leaflet to recalculate map size
             setTimeout(() => {
                 map.invalidateSize();
                 console.log('Map size recalculated after showing app');
-            }, 50);
+            }, 300);
 
             const user = getCurrentUser();
             if (user) {
                 applyFactionUI();
             }
+        }
+
+        function showLoadingError(msg) {
+            const err = document.getElementById('loading-error');
+            err.textContent = msg;
+            err.style.display = 'block';
         }
 
         function applyFactionUI() {
@@ -1291,6 +1336,8 @@
                 const faction = FACTIONS.find(f => f.id === user.factionId);
                 nameEl.textContent = faction ? faction.name : user.factionId;
             }
+
+            updateTroopCounter();
 
             // Welcome banner
             const banner = document.getElementById('welcome-banner');
@@ -1328,6 +1375,22 @@
             updateWaypointBadges();
             refreshWaypointPopups();
             updateSidebar();
+        }
+
+        function updateTroopCounter() {
+            const user = getCurrentUser();
+            const counter = document.getElementById('troop-counter');
+            if (!user || !counter) return;
+            if (user.isAdmin) {
+                counter.textContent = '';
+                return;
+            }
+            const total = getFactionTotalTroops(user.factionId);
+            const limit = getFactionLimit(user.factionId);
+            const pct = limit > 0 ? Math.round((total / limit) * 100) : 0;
+            const color = pct > 90 ? '#ff4444' : pct > 70 ? '#ff9900' : '#0d1117';
+            counter.textContent = limit > 0 ? `⚔️ ${total}/${limit}` : `⚔️ ${total}`;
+            counter.style.color = color;
         }
 
         function logout() {
@@ -1398,6 +1461,7 @@
             zoomDiv.innerHTML = `
                 <button class="zoom-btn" onclick="map.zoomIn()" title="Приблизить">+</button>
                 <button class="zoom-btn" onclick="map.zoomOut()" title="Отдалить">&minus;</button>
+                <button class="zoom-btn" onclick="map.setView([-51.90625, 88.28125], 4)" title="Центрировать карту" style="font-size:0.85rem;">⌖</button>
             `;
             document.getElementById('map').appendChild(zoomDiv);
 
@@ -1412,11 +1476,27 @@
         function buildFactionLegend() {
             const container = document.getElementById('faction-legend');
             container.innerHTML = FACTIONS.map(f =>
-                `<div class="legend-item">
+                `<div class="legend-item" data-faction="${f.id}" onclick="focusFaction('${f.id}')" style="cursor:pointer;">
                     <span class="legend-dot" style="background:${f.color};box-shadow:0 0 4px ${f.color};"></span>
                     ${f.name}
                 </div>`
             ).join('');
+        }
+
+        function focusFaction(factionId) {
+            // Highlight legend
+            document.querySelectorAll('.legend-item').forEach(el => el.classList.remove('active'));
+            const item = document.querySelector(`.legend-item[data-faction="${factionId}"]`);
+            if (item) item.classList.add('active');
+
+            // Find first waypoint of this faction
+            if (window.waypoints) {
+                const wp = window.waypoints.find(w => w.f === factionId);
+                if (wp && waypointMarkers[wp.n]) {
+                    map.setView(wp.ll, 5);
+                    waypointMarkers[wp.n].openPopup();
+                }
+            }
         }
 
         function renderLimitsList() {
@@ -1499,6 +1579,7 @@
             localStorage.setItem('lotr-troops', JSON.stringify(troopsData));
             updateWaypointBadges();
             updateSidebar();
+            updateTroopCounter();
         }
 
         function getWaypointTroops(waypointName) {
@@ -1823,7 +1904,10 @@
         // === WAYPOINTS LOADER ===
         function loadWaypoints() {
             fetch('waypoints.json')
-                .then(r => r.json())
+                .then(r => {
+                    if (!r.ok) throw new Error('waypoints.json: ' + r.status);
+                    return r.json();
+                })
                 .then(data => {
                     const wpGroup = L.featureGroup();
                     window.waypoints = data;
@@ -1844,23 +1928,36 @@
                     });
                     wpGroup.addTo(map);
                     console.log('Loaded ' + data.length + ' waypoints');
+                    checkAllLoaded();
                 })
-                .catch(e => console.error('Failed to load waypoints:', e));
+                .catch(e => {
+                    console.error('Failed to load waypoints:', e);
+                    showLoadingError('Не удалось загрузить точки (' + e.message + ')');
+                });
         }
         loadWaypoints();
 
         // === ROADS LOADER ===
+        let roadsLoaded = false, waypointsLoaded = false;
+        function checkAllLoaded() {
+            if (roadsLoaded && waypointsLoaded) {
+                document.getElementById('loading-overlay').classList.add('hidden');
+            }
+        }
+
         function loadRoads() {
             const roadGroup = L.featureGroup();
 
             fetch('roads.json')
-                .then(r => r.json())
+                .then(r => {
+                    if (!r.ok) throw new Error('roads.json: ' + r.status);
+                    return r.json();
+                })
                 .then(roads => {
                     for (const [key, road] of Object.entries(roads)) {
                         road.paths.forEach(path => {
                             if (path.length < 2) return;
 
-                            // Main road line (single, no glow)
                             const polyline = L.polyline(path, {
                                 color: '#c9a227',
                                 weight: 2,
@@ -1869,7 +1966,6 @@
                                 lineCap: 'round'
                             });
 
-                            // Add popup once per road (not per path!)
                             if (path === road.paths[0]) {
                                 polyline.bindPopup(`<b style="color:#c9a227">${road.name}</b><br><small>${key}</small>`);
                             }
@@ -1878,9 +1974,14 @@
                         });
                     }
                     roadGroup.addTo(map);
-                    console.log(`✓ Loaded ${Object.keys(roads).length} roads (simple version)`);
+                    console.log(`✓ Loaded ${Object.keys(roads).length} roads`);
+                    roadsLoaded = true;
+                    checkAllLoaded();
                 })
-                .catch(e => console.error('Failed to load roads:', e));
+                .catch(e => {
+                    console.error('Failed to load roads:', e);
+                    showLoadingError('Не удалось загрузить дороги (' + e.message + ')');
+                });
         }
         loadRoads();
     </script>
