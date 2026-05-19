@@ -997,6 +997,42 @@
             box-shadow: 0 4px 12px rgba(201, 162, 39, 0.3);
         }
 
+        /* Icon picker */
+        .icon-picker {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            margin-top: 6px;
+        }
+        .icon-picker-btn {
+            padding: 5px 4px;
+            background: #161b22;
+            border: 1px solid rgba(201, 162, 39, 0.2);
+            border-radius: 6px;
+            color: #c9a227;
+            font-family: 'Cinzel', serif;
+            font-size: 0.7rem;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+            line-height: 1.2;
+        }
+        .icon-picker-btn:hover {
+            border-color: #c9a227;
+            background: rgba(201, 162, 39, 0.1);
+        }
+        .icon-picker-btn.active {
+            border-color: #c9a227;
+            background: rgba(201, 162, 39, 0.2);
+            box-shadow: 0 0 8px rgba(201, 162, 39, 0.3);
+        }
+        .icon-picker-btn .icon-label {
+            font-size: 0.55rem;
+            color: #888;
+            margin-top: 2px;
+            display: block;
+        }
+
         /* === LOGIN MODAL === */
         #login-overlay {
             position: fixed;
@@ -1361,7 +1397,46 @@
         let editMode = false;
         let map;
         let troopsData = {};
-        let waypointMarkers = {};
+        let waypointIcons = {}; // custom waypoint icons per waypoint name
+        let waypointMarkers = {}; // Leaflet marker instances
+
+        function loadWaypointIcons() {
+            const saved = localStorage.getItem('lotr-waypoint-icons');
+            if (saved) {
+                try { waypointIcons = JSON.parse(saved); } catch(e) { waypointIcons = {}; }
+            }
+        }
+
+        function saveWaypointIcons() {
+            localStorage.setItem('lotr-waypoint-icons', JSON.stringify(waypointIcons));
+        }
+
+        function getWaypointCustomIcon(waypointName) {
+            return waypointIcons[waypointName] || null;
+        }
+
+        function setWaypointCustomIcon(waypointName, iconType) {
+            if (iconType && WAYPOINT_ICONS[iconType]) {
+                waypointIcons[waypointName] = iconType;
+            } else {
+                delete waypointIcons[waypointName];
+            }
+            saveWaypointIcons();
+            const wp = window.waypoints?.find(w => w.n === waypointName);
+            if (wp && waypointMarkers[wp.n]) {
+                waypointMarkers[wp.n].setIcon(createWaypointIcon(wp));
+            }
+        }
+
+        // Available icon choices
+        const WAYPOINT_ICON_OPTIONS = [
+            { id: 'castle', label: '🏰 Замок', desc: 'Столица, крепость' },
+            { id: 'city',   label: '🏘️ Город', desc: 'Город, поселение' },
+            { id: 'port',   label: '⚓ Порт', desc: 'Порт, гавань' },
+            { id: 'tower',  label: '🗼 Башня', desc: 'Башня, форпост' },
+            { id: 'gate',   label: '🚪 Врата', desc: 'Перевал, мост, ворота' },
+            { id: 'fort',   label: '🏯 Форт', desc: 'Прибежище, логово' }
+        ];
         let currentUser = null;
 
         window.editMode = editMode;
@@ -1568,6 +1643,7 @@
         function init() {
             initMap();
             loadTroops();
+            loadWaypointIcons();
             setupEventListeners();
             buildFactionLegend();
             renderLimitsList();
@@ -1578,7 +1654,7 @@
             map = L.map('map', {
                 crs: L.CRS.Simple,
                 minZoom: 1,
-                maxZoom: 5,
+                maxZoom: 7,
                 zoomControl: false
             }).setView([-51.90625, 88.28125], 4);
 
@@ -1595,7 +1671,7 @@
             L.tileLayer('https://maplotr.enchald.com/tiles/{z}_{x}_{y}.png', {
                 attribution: 'Enchald LOTR Server',
                 minZoom: 1,
-                maxZoom: 5,
+                maxZoom: 7,
                 noWrap: true
             }).addTo(map);
         }
@@ -1858,7 +1934,8 @@
         // === WAYPOINT MARKERS WITH BADGES ===
         function createWaypointIcon(wp) {
             const c = FACTION_COLORS[wp.f] || '#aaa';
-            const iconType = getWaypointIconType(wp.n);
+            const customType = getWaypointCustomIcon(wp.n);
+            const iconType = customType || getWaypointIconType(wp.n);
             const iconSvg = WAYPOINT_ICONS[iconType] || WAYPOINT_ICONS.tower;
             let totalTroops = getTotalTroopsForWaypoint(wp.n);
             // Non-admin: badge shows only own faction troops
@@ -2097,6 +2174,7 @@
                         <input type="hidden" id="add-troops-stance" value="${autoStance}">
                         <div id="limit-info" style="font-size:0.7rem;color:#888;margin-top:4px;"></div>
                         <div id="stance-preview" style="margin-top:4px;"></div>
+                        ${user && (user.isAdmin || user.factionId === wp.f) ? buildIconPickerHTML(wp.n) : ''}
                     </div>
                 `;
             }
@@ -2125,6 +2203,35 @@
             document.getElementById('add-troops-stance').value = stance;
             preview.innerHTML = `<span style="color:${stanceColor};font-size:0.75rem;font-weight:bold;">${stanceLabel}</span> <span style="color:#484f58;font-size:0.65rem;">(${stance === 'defense' ? 'своя точка' : 'чужая точка'})</span>`;
             updateLimitInfo();
+        };
+
+        function buildIconPickerHTML(waypointName) {
+            const current = getWaypointCustomIcon(waypointName);
+            const buttons = WAYPOINT_ICON_OPTIONS.map(opt => {
+                const active = current === opt.id ? 'active' : '';
+                const svg = WAYPOINT_ICONS[opt.id].replace(/fill="currentColor"/g, `fill="#c9a227"`).replace(/width="16"/g, 'width="14"').replace(/height="16"/g, 'height="14"');
+                return `<button class="icon-picker-btn ${active}" onclick="selectWaypointIcon('${waypointName}', '${opt.id}')" title="${opt.desc}">${svg}<span class="icon-label">${opt.label}</span></button>`;
+            }).join('');
+            const resetBtn = current
+                ? `<button class="icon-picker-btn" onclick="selectWaypointIcon('${waypointName}', null)" title="Авто по названию"><span style="font-size:0.9rem;">↺</span><span class="icon-label">Авто</span></button>`
+                : '';
+            return `
+                <hr class="popup-divider">
+                <div class="popup-section-title">🎨 Внешний вид точки:</div>
+                <div class="icon-picker">
+                    ${buttons}
+                    ${resetBtn}
+                </div>
+            `;
+        }
+
+        window.selectWaypointIcon = function(waypointName, iconType) {
+            setWaypointCustomIcon(waypointName, iconType);
+            const marker = waypointMarkers[waypointName];
+            if (marker) {
+                marker.setPopupContent(createWaypointPopupContent(window.waypoints.find(w => w.n === waypointName)));
+                marker.openPopup();
+            }
         };
 
         // Start
