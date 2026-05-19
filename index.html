@@ -807,12 +807,12 @@
                 padding: 10px 12px;
             }
 
-            #sidebar-header .title-block h1 {
+            .header-title h1 {
                 font-size: 0.85rem;
                 letter-spacing: 0.5px;
             }
 
-            #sidebar-header .title-block p {
+            .header-title p {
                 font-size: 0.55rem;
             }
 
@@ -822,19 +822,10 @@
                 max-width: 80px;
             }
 
-            #troop-counter {
-                font-size: 0.55rem !important;
-                padding: 1px 4px !important;
-            }
-
             #logout-btn {
                 width: 24px;
                 height: 24px;
                 font-size: 0.7rem;
-            }
-
-            .header-actions {
-                gap: 4px;
             }
 
             #sidebar-close {
@@ -1164,34 +1155,100 @@
         .welcome-banner.show { display: block; }
 
         /* User info in sidebar header */
-        .user-info {
+        .header-logo {
             display: flex;
             align-items: center;
-            gap: 10px;
-            flex: 1;
-            min-width: 0;
-            overflow: hidden;
+            gap: 12px;
         }
 
-        .user-name {
-            font-size: 0.7rem;
-            color: #0d1117;
+        .header-icon {
+            font-size: 1.6rem;
+            flex-shrink: 0;
+        }
+
+        .header-title h1 {
+            font-size: 1.1rem;
             font-weight: 700;
-            background: rgba(0,0,0,0.15);
-            padding: 3px 10px;
-            border-radius: 12px;
+            letter-spacing: 1px;
+        }
+
+        .header-title p {
+            font-size: 0.65rem;
+            opacity: 0.7;
+            margin-top: 2px;
+        }
+
+        /* Account section */
+        .account-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            background: rgba(201, 162, 39, 0.05);
+            border: 1px solid rgba(201, 162, 39, 0.15);
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+
+        .account-avatar {
+            font-size: 1.5rem;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .account-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .account-name {
+            font-size: 0.85rem;
+            color: #e8e8e8;
+            font-weight: 700;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 100px;
-            flex-shrink: 0;
         }
 
-        .header-actions {
+        .account-faction {
+            font-size: 0.7rem;
+            color: #c9a227;
+            margin-top: 2px;
+        }
+
+        .account-stats {
             display: flex;
-            align-items: center;
-            gap: 6px;
-            flex-shrink: 0;
+            gap: 12px;
+            margin-bottom: 10px;
+            padding: 0 2px;
+        }
+
+        .account-stat {
+            font-size: 0.75rem;
+            color: #888;
+        }
+
+        .btn-logout {
+            width: 100%;
+            background: transparent;
+            border: 1px solid rgba(201, 162, 39, 0.3);
+            color: #c9a227;
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Cinzel', serif;
+        }
+
+        .btn-logout:hover {
+            background: rgba(201, 162, 39, 0.1);
+            border-color: #c9a227;
         }
 
         #logout-btn {
@@ -1273,22 +1330,34 @@
         <!-- Sidebar -->
         <div id="sidebar">
             <div id="sidebar-header">
-                <div class="user-info">
-                    <div class="title-block">
+                <div class="header-logo">
+                    <span class="header-icon">🗺️</span>
+                    <div class="header-title">
                         <h1>Карта Средиземья</h1>
                         <p>Enchald LOTR Server</p>
                     </div>
-                    <span class="user-name" id="user-name-display"></span>
-                    <span id="troop-counter" style="font-size:0.65rem;color:#0d1117;background:rgba(0,0,0,0.15);padding:2px 8px;border-radius:10px;font-weight:700;"></span>
                 </div>
-                <div class="header-actions">
-                    <button id="logout-btn" onclick="logout()" title="Выйти">⏻</button>
-                    <button id="sidebar-close" onclick="toggleSidebar()">×</button>
-                </div>
+                <button id="sidebar-close" onclick="toggleSidebar()">×</button>
             </div>
 
             <!-- Welcome banner -->
             <div class="welcome-banner" id="welcome-banner"></div>
+
+            <!-- Section: Аккаунт -->
+            <div class="sidebar-section" id="account-section">
+                <div class="sidebar-section-title">Аккаунт</div>
+                <div class="account-card">
+                    <div class="account-avatar" id="account-avatar">👤</div>
+                    <div class="account-details">
+                        <div class="account-name" id="account-name-display"></div>
+                        <div class="account-faction" id="account-faction-display"></div>
+                    </div>
+                </div>
+                <div class="account-stats">
+                    <span class="account-stat" id="account-troop-counter">⚔️ Войска: 0</span>
+                </div>
+                <button class="btn btn-logout" onclick="logout()">⏻ Сменить аккаунт</button>
+            </div>
 
             <!-- Section: Управление -->
             <div class="sidebar-section" id="controls-section">
@@ -1543,13 +1612,19 @@
             const user = getCurrentUser();
             if (!user) return;
 
-            // Show user name
-            const nameEl = document.getElementById('user-name-display');
+            // Account section
+            const nameEl = document.getElementById('account-name-display');
+            const factionEl = document.getElementById('account-faction-display');
+            const avatarEl = document.getElementById('account-avatar');
             if (user.isAdmin) {
-                nameEl.textContent = '👑 Админ';
+                nameEl.textContent = 'Администратор';
+                factionEl.textContent = 'Полный доступ';
+                if (avatarEl) avatarEl.textContent = '👑';
             } else {
                 const faction = FACTIONS.find(f => f.id === user.factionId);
                 nameEl.textContent = faction ? faction.name : user.factionId;
+                factionEl.textContent = 'Фракция';
+                if (avatarEl) avatarEl.textContent = '🛡️';
             }
 
             updateTroopCounter();
@@ -1594,18 +1669,17 @@
 
         function updateTroopCounter() {
             const user = getCurrentUser();
-            const counter = document.getElementById('troop-counter');
+            const counter = document.getElementById('account-troop-counter');
             if (!user || !counter) return;
             if (user.isAdmin) {
-                counter.textContent = '';
+                counter.textContent = '👑 Админ';
                 return;
             }
             const total = getFactionTotalTroops(user.factionId);
             const limit = getFactionLimit(user.factionId);
             const pct = limit > 0 ? Math.round((total / limit) * 100) : 0;
-            const color = pct > 90 ? '#ff4444' : pct > 70 ? '#ff9900' : '#0d1117';
-            counter.textContent = limit > 0 ? `⚔️ ${total}/${limit}` : `⚔️ ${total}`;
-            counter.style.color = color;
+            const color = pct > 90 ? '#ff4444' : pct > 70 ? '#ff9900' : '#e8e8e8';
+            counter.innerHTML = `⚔️ Войска: <span style="color:${color};font-weight:700;">${total}${limit > 0 ? '/' + limit : ''}</span>`;
         }
 
         function logout() {
