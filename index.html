@@ -1605,6 +1605,21 @@
             if (saved) {
                 try {
                     troopsData = JSON.parse(saved);
+                    // Миграция: добавляем stance к старым записям без него
+                    let migrated = false;
+                    for (const wpName in troopsData) {
+                        const wp = window.waypoints?.find(w => w.n === wpName);
+                        troopsData[wpName].forEach(t => {
+                            if (!t.stance) {
+                                t.stance = (wp && wp.f === t.factionId) ? 'defense' : 'attack';
+                                migrated = true;
+                            }
+                        });
+                    }
+                    if (migrated) {
+                        saveTroops();
+                        console.log('Migrated old troops data: added stance');
+                    }
                     updateWaypointBadges();
                     updateSidebar();
                 } catch (e) {
@@ -1629,11 +1644,21 @@
             return getWaypointTroops(waypointName).reduce((sum, t) => sum + t.troops, 0);
         }
 
-        function addTroops(waypointName, factionId, troopsCount) {
+        function addTroops(waypointName, factionId, troopsCount, stance) {
+            // Определяем stance если не передан
+            if (!stance) {
+                const wp = window.waypoints?.find(w => w.n === waypointName);
+                if (wp && wp.f === factionId) {
+                    stance = 'defense';
+                } else {
+                    stance = 'attack';
+                }
+            }
+
             // Проверяем лимит фракции
             const limit = getFactionLimit(factionId);
             const current = getFactionTotalTroops(factionId);
-            const existing = troopsData[waypointName]?.find(t => t.factionId === factionId);
+            const existing = troopsData[waypointName]?.find(t => t.factionId === factionId && t.stance === stance);
             const alreadyOnPoint = existing ? existing.troops : 0;
             const available = limit - (current - alreadyOnPoint);
             
@@ -1645,19 +1670,24 @@
             if (!troopsData[waypointName]) {
                 troopsData[waypointName] = [];
             }
-            const existingEntry = troopsData[waypointName].find(t => t.factionId === factionId);
+            const existingEntry = troopsData[waypointName].find(t => t.factionId === factionId && t.stance === stance);
             if (existingEntry) {
                 existingEntry.troops += troopsCount;
             } else {
-                troopsData[waypointName].push({ factionId, troops: troopsCount });
+                troopsData[waypointName].push({ factionId, troops: troopsCount, stance });
             }
             saveTroops();
             return true;
         }
 
-        function removeTroops(waypointName, factionId) {
+        function removeTroops(waypointName, factionId, stance) {
             if (troopsData[waypointName]) {
-                troopsData[waypointName] = troopsData[waypointName].filter(t => t.factionId !== factionId);
+                if (stance) {
+                    troopsData[waypointName] = troopsData[waypointName].filter(t => !(t.factionId === factionId && t.stance === stance));
+                } else {
+                    // Обратная совместимость: удалить все записи этой фракции
+                    troopsData[waypointName] = troopsData[waypointName].filter(t => t.factionId !== factionId);
+                }
                 if (troopsData[waypointName].length === 0) {
                     delete troopsData[waypointName];
                 }
@@ -1733,8 +1763,8 @@
             // Non-admin: badge shows only own faction troops
             const user = getCurrentUser();
             if (user && !user.isAdmin && user.factionId) {
-                const ownEntry = getWaypointTroops(wp.n).find(t => t.factionId === user.factionId);
-                totalTroops = ownEntry ? ownEntry.troops : 0;
+                const ownEntries = getWaypointTroops(wp.n).filter(t => t.factionId === user.factionId);
+                totalTroops = ownEntries.reduce((sum, t) => sum + t.troops, 0);
             }
             const badgeHtml = totalTroops > 0
                 ? `<div class="wp-badge">${formatTroops(totalTroops)}</div>`
@@ -1791,10 +1821,12 @@
 
                 const troopsList = troops.map(t => {
                     const faction = FACTIONS.find(f => f.id === t.factionId);
+                    const stanceIcon = t.stance === 'defense' ? '🛡️' : '⚔️';
+                    const stanceColor = t.stance === 'defense' ? '#4CAF50' : '#ff4444';
                     return `<div class="troop-entry">
                         <span class="troop-dot" style="background:${faction?.color || '#aaa'};color:${faction?.color || '#aaa'};"></span>
-                        <span class="troop-name">${faction?.name || t.factionId}</span>
-                        <span class="troop-count">${formatTroops(t.troops)}</span>
+                        <span class="troop-name">${stanceIcon} ${faction?.name || t.factionId}</span>
+                        <span class="troop-count" style="color:${stanceColor};">${formatTroops(t.troops)}</span>
                     </div>`;
                 }).join('');
 
@@ -1836,8 +1868,9 @@
         function addTroopsAtPoint(waypointName) {
             const factionId = document.getElementById('add-troops-faction').value;
             const troopsCount = parseInt(document.getElementById('add-troops-count').value) || 0;
+            const stance = document.getElementById('add-troops-stance').value || 'attack';
             if (troopsCount > 0) {
-                const success = addTroops(waypointName, factionId, troopsCount);
+                const success = addTroops(waypointName, factionId, troopsCount, stance);
                 refreshWaypointPopups();
             }
         }
@@ -1870,27 +1903,51 @@
             // Troops list
             let troopsHtml = '';
             if (troops.length > 0) {
-                troopsHtml = troops.map(t => {
-                    const faction = FACTIONS.find(f => f.id === t.factionId);
-                    const canDelete = user ? (user.isAdmin || user.factionId === t.factionId) : false;
-                    const deleteBtn = canDelete
-                        ? `<button class="popup-troop-delete" onclick="removeTroopsAtPoint('${wp.n}', '${t.factionId}')">Удалить</button>`
-                        : '';
-                    return `<div class="popup-troop-entry">
-                        <span class="popup-troop-dot" style="background:${faction?.color || '#aaa'};"></span>
-                        <span class="popup-troop-name">${faction?.name || t.factionId}</span>
-                        <span class="popup-troop-count">${formatTroops(t.troops)}</span>
-                        ${deleteBtn}
-                    </div>`;
-                }).join('');
+                // Группируем по stance
+                const defenseTroops = troops.filter(t => t.stance === 'defense');
+                const attackTroops = troops.filter(t => t.stance === 'attack' || !t.stance);
+
+                troopsHtml = '';
+
+                if (defenseTroops.length > 0) {
+                    troopsHtml += `<div style="margin-bottom:8px;"><span style="color:#4CAF50;font-size:0.7rem;font-weight:bold;">🛡️ Оборона</span></div>`;
+                    troopsHtml += defenseTroops.map(t => troopEntry(t)).join('');
+                }
+
+                if (attackTroops.length > 0) {
+                    troopsHtml += `<div style="margin:8px 0 4px;"><span style="color:#ff4444;font-size:0.7rem;font-weight:bold;">⚔️ Нападение</span></div>`;
+                    troopsHtml += attackTroops.map(t => troopEntry(t)).join('');
+                }
             } else {
                 troopsHtml = '<div class="popup-no-troops">Нет войск</div>';
             }
 
-            // Add form — non-admin: always shown, faction locked
+            function troopEntry(t) {
+                const faction = FACTIONS.find(f => f.id === t.factionId);
+                const stanceLabel = t.stance === 'defense' ? '🛡️' : '⚔️';
+                const stanceColor = t.stance === 'defense' ? '#4CAF50' : '#ff4444';
+                const canDelete = user ? (user.isAdmin || user.factionId === t.factionId) : false;
+                const deleteBtn = canDelete
+                    ? `<button class="popup-troop-delete" onclick="removeTroopsAtPoint('${wp.n}', '${t.factionId}', '${t.stance || 'attack'}')">Удалить</button>`
+                    : '';
+                return `<div class="popup-troop-entry">
+                    <span class="popup-troop-dot" style="background:${faction?.color || '#aaa'};"></span>
+                    <span class="popup-troop-name">${stanceLabel} ${faction?.name || t.factionId}</span>
+                    <span class="popup-troop-count">${formatTroops(t.troops)}</span>
+                    ${deleteBtn}
+                </div>`;
+            }
+
+            // Add form — показываем stance
             const showAddForm = editMode;
             if (showAddForm) {
                 const isLocked = user && !user.isAdmin && user.factionId;
+                const selectedFaction = isLocked ? user.factionId : document.getElementById('add-troops-faction')?.value || FACTIONS[0].id;
+                const wpFaction = wp.f;
+                const autoStance = selectedFaction === wpFaction ? 'defense' : 'attack';
+                const stanceLabel = autoStance === 'defense' ? '🛡️ Оборона' : '⚔️ Нападение';
+                const stanceColor = autoStance === 'defense' ? '#4CAF50' : '#ff4444';
+
                 const factionOptions = isLocked
                     ? `<option value="${user.factionId}" selected>${getFactionName(user.factionId)}</option>`
                     : FACTIONS.map(f => {
@@ -1907,19 +1964,25 @@
                         <div class="popup-desc">${wp.d}</div>
                     </div>
                     <hr class="popup-divider">
-                    <div class="popup-section-title">&#9876; Войска на точке:</div>
+                    <div class="popup-section-title">🛡️⚔️ Войска на точке:</div>
                     ${troopsHtml}
                     <hr class="popup-divider">
-                    <div class="popup-section-title">&#10133; Добавить войска:</div>
+                    <div class="popup-section-title">➕ Добавить войска:</div>
                     <div class="popup-add-form">
-                        <select id="add-troops-faction" ${isLocked ? 'disabled' : ''} onchange="updateLimitInfo()">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                            <span style="color:${stanceColor};font-size:0.8rem;font-weight:bold;">${stanceLabel}</span>
+                            <span style="color:#484f58;font-size:0.65rem;">(${selectedFaction === wpFaction ? 'своя точка' : 'чужая точка'})</span>
+                        </div>
+                        <select id="add-troops-faction" ${isLocked ? 'disabled' : ''} onchange="onStancePreviewChange('${wp.n}', '${wp.f}')">
                             ${factionOptions}
                         </select>
                         <div class="popup-add-row">
                             <input type="number" id="add-troops-count" placeholder="Кол-во" min="1">
                             <button class="popup-add-btn" onclick="addTroopsAtPoint('${wp.n}')">Добавить</button>
                         </div>
+                        <input type="hidden" id="add-troops-stance" value="${autoStance}">
                         <div id="limit-info" style="font-size:0.7rem;color:#888;margin-top:4px;"></div>
+                        <div id="stance-preview" style="margin-top:4px;"></div>
                     </div>
                 `;
             }
@@ -1932,10 +1995,23 @@
                     <div class="popup-desc">${wp.d}</div>
                 </div>
                 <hr class="popup-divider">
-                <div class="popup-section-title">&#9876; Войска на точке:</div>
+                <div class="popup-section-title">🛡️⚔️ Войска на точке:</div>
                 ${troopsHtml}
             `;
         }
+
+        window.onStancePreviewChange = function(waypointName, waypointFaction) {
+            const sel = document.getElementById('add-troops-faction');
+            const preview = document.getElementById('stance-preview');
+            if (!sel || !preview) return;
+            const factionId = sel.value;
+            const stance = factionId === waypointFaction ? 'defense' : 'attack';
+            const stanceLabel = stance === 'defense' ? '🛡️ Оборона' : '⚔️ Нападение';
+            const stanceColor = stance === 'defense' ? '#4CAF50' : '#ff4444';
+            document.getElementById('add-troops-stance').value = stance;
+            preview.innerHTML = `<span style="color:${stanceColor};font-size:0.75rem;font-weight:bold;">${stanceLabel}</span> <span style="color:#484f58;font-size:0.65rem;">(${stance === 'defense' ? 'своя точка' : 'чужая точка'})</span>`;
+            updateLimitInfo();
+        };
 
         // Start
         init();
