@@ -692,23 +692,6 @@
             to { transform: scale(1); opacity: 1; }
         }
 
-        .wp-marker .wp-badge {
-            position: absolute;
-            bottom: -8px;
-            right: -10px;
-            background: linear-gradient(135deg, var(--badge-color, #c9a227), var(--badge-darker, #8b6914));
-            color: var(--badge-text, #121518);
-            border-radius: 8px;
-            padding: 1px 5px;
-            font-size: 0.55rem;
-            font-weight: bold;
-            border: 2px solid #14181a;
-            min-width: 18px;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-            z-index: 3;
-        }
-
         .wp-marker.pulsing {
             animation: wpPulse 1s ease infinite;
         }
@@ -2071,20 +2054,21 @@
             const iconType = customType || getWaypointIconType(wp.n);
             const iconSvg = WAYPOINT_ICONS[iconType] || WAYPOINT_ICONS.tower;
             const troops = getWaypointTroops(wp.n);
-            let totalTroops = troops.reduce((sum, t) => sum + t.troops, 0);
-            let badgeColor = c;
             const user = getCurrentUser();
-            if (user && !user.isAdmin && user.factionId) {
-                const ownEntries = troops.filter(t => t.factionId === user.factionId);
-                totalTroops = ownEntries.reduce((sum, t) => sum + t.troops, 0);
-                badgeColor = FACTION_COLORS[user.factionId] || c;
-            } else if (troops.length > 0) {
-                const maxFaction = troops.reduce((max, t) => t.troops > max.troops ? t : max, troops[0]);
-                badgeColor = FACTION_COLORS[maxFaction.factionId] || c;
+
+            let badgeHtml = '';
+            if (troops.length > 0) {
+                const entries = (user && user.isAdmin) ? troops : troops.filter(t => !user || t.factionId === user.factionId);
+                if (entries.length > 0) {
+                    badgeHtml = `<div style="display:flex;gap:1px;position:absolute;bottom:-10px;right:-12px;z-index:3;">` +
+                        entries.map(t => {
+                            const fColor = FACTION_COLORS[t.factionId] || '#aaa';
+                            return `<div style="background:${fColor};color:${getContrastColor(fColor)};border:1px solid #14181a;border-radius:4px;padding:0 3px;font-size:0.5rem;font-weight:bold;min-width:14px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.4);">${formatTroops(t.troops)}</div>`;
+                        }).join('') +
+                        `</div>`;
+                }
             }
-            const badgeHtml = totalTroops > 0
-                ? `<div class="wp-badge" style="background:${badgeColor};color:${getContrastColor(badgeColor)};border-color:${badgeColor};box-shadow:0 2px 8px ${badgeColor}66;">${formatTroops(totalTroops)}</div>`
-                : '';
+
             return L.divIcon({
                 className: 'wp-icon',
                 html: `<div class="wp-marker" style="color:${c};--faction-color:${c};" data-type="${iconType}">
@@ -2209,6 +2193,27 @@
             refreshWaypointPopups();
         }
 
+        // Admin: transfer waypoint ownership to another faction
+        window.transferWaypointFaction = function(waypointName) {
+            const user = getCurrentUser();
+            if (!user || !user.isAdmin) { alert('Только администратор может передать точку'); return; }
+            const sel = document.getElementById(`transfer-faction-${waypointName}`);
+            if (!sel) return;
+            const newFaction = sel.value;
+            const wp = window.waypoints?.find(w => w.n === waypointName);
+            if (!wp || wp.f === newFaction) return;
+            if (!confirm(`Передать точку "${waypointName}" фракции ${getFactionName(newFaction)}?`)) return;
+            wp.f = newFaction;
+            const marker = waypointMarkers[waypointName];
+            if (marker) {
+                marker.setIcon(createWaypointIcon(wp));
+                marker.setPopupContent(createWaypointPopupContent(wp));
+                marker.openPopup();
+            }
+            updateSidebar();
+            renderLimitsList();
+        };
+
         function refreshWaypointPopups() {
             if (!window.waypoints) return;
             window.waypoints.forEach(wp => {
@@ -2286,6 +2291,17 @@
                         return `<option value="${f.id}">${f.name}${lim > 0 ? ' ('+cur+'/'+lim+')' : ''}</option>`;
                     }).join('');
 
+                // Admin-only: transfer waypoint faction
+                const transferForm = user && user.isAdmin
+                    ? `<div class="popup-section-title" style="margin-top:12px;">🏳️ Передать точку:</div>
+                       <div class="popup-field">
+                           <select id="transfer-faction-${wp.n}">
+                               ${FACTIONS.map(f => `<option value="${f.id}" ${f.id === wp.f ? 'selected' : ''}>${f.name}</option>`).join('')}
+                           </select>
+                           <button class="btn-add" style="margin-top:6px;" onclick="transferWaypointFaction('${wp.n}')">Передать точку</button>
+                       </div>`
+                    : '';
+
                 return `
                     <div class="popup-title" style="color:${c};">${wp.n}</div>
                     <div style="text-align:center;">
@@ -2315,6 +2331,7 @@
                         <div id="stance-preview" style="margin-top:4px;"></div>
                         ${user && (user.isAdmin || user.factionId === wp.f) ? buildIconPickerHTML(wp.n) : ''}
                     </div>
+                    ${transferForm}
                 `;
             }
 
