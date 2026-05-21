@@ -16,7 +16,44 @@
             overflow: hidden;
         }
 
-        #app { display: flex; height: 100vh; }
+        #app { display: flex; flex-direction: column; height: 100vh; }
+        #main-area { display: flex; flex: 1; overflow: hidden; }
+
+        #top-faction-bar {
+            width: 100%;
+            background: #15131a;
+            border-bottom: 2px solid #4a3320;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow-x: auto;
+            z-index: 900;
+            scrollbar-width: thin;
+            scrollbar-color: #c9a227 #15131a;
+        }
+        #top-faction-bar::-webkit-scrollbar { height: 4px; }
+        #top-faction-bar::-webkit-scrollbar-thumb { background: #c9a227; border-radius: 4px; }
+        .top-faction-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.65rem;
+            color: #9a8e7e;
+            transition: background 0.3s ease;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        .top-faction-item:hover { background: rgba(201, 162, 39, 0.1); }
+        .top-faction-item.active { background: rgba(201, 162, 39, 0.25); border: 1px solid rgba(201, 162, 39, 0.5); }
+        .top-faction-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
 
         /* === SIDEBAR — ANCIENT TOME "Переплёт" === */
         #sidebar {
@@ -1341,82 +1378,81 @@
     </div>
 
     <div id="app" style="display:none;">
-        <!-- Hamburger button -->
-        <button id="hamburger" class="hidden" onclick="toggleSidebar()">&#9776;</button>
+        <!-- Top faction bar -->
+        <div id="top-faction-bar"></div>
 
-        <!-- Sidebar overlay (mobile) -->
-        <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+        <div id="main-area">
+            <!-- Hamburger button -->
+            <button id="hamburger" class="hidden" onclick="toggleSidebar()">&#9776;</button>
 
-        <!-- Sidebar -->
-        <div id="sidebar">
-            <div id="sidebar-header">
-                <div class="header-logo">
-                    <span class="header-icon">🗺️</span>
-                    <div class="header-title">
-                        <h1>Карта Средиземья</h1>
-                        <p>Enchald LOTR Server</p>
+            <!-- Sidebar overlay (mobile) -->
+            <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+            <!-- Sidebar -->
+            <div id="sidebar">
+                <div id="sidebar-header">
+                    <div class="header-logo">
+                        <span class="header-icon">🗺️</span>
+                        <div class="header-title">
+                            <h1>Карта Средиземья</h1>
+                            <p>Enchald LOTR Server</p>
+                        </div>
+                    </div>
+                    <button id="sidebar-close" onclick="toggleSidebar()">×</button>
+                </div>
+
+                <!-- Welcome banner -->
+                <div class="welcome-banner" id="welcome-banner"></div>
+
+                <!-- Section: Аккаунт -->
+                <div class="sidebar-section" id="account-section">
+                    <div class="sidebar-section-title">Аккаунт</div>
+                    <div class="account-card">
+                        <div class="account-avatar" id="account-avatar">👤</div>
+                        <div class="account-details">
+                            <div class="account-name" id="account-name-display"></div>
+                            <div class="account-faction" id="account-faction-display"></div>
+                        </div>
+                    </div>
+                    <div class="account-stats">
+                        <span class="account-stat" id="account-troop-counter">⚔️ Войска: 0</span>
+                    </div>
+                    <button class="btn btn-logout" onclick="logout()">🚪 Сменить аккаунт</button>
+                </div>
+
+                <!-- Section: Управление -->
+                <div class="sidebar-section" id="controls-section">
+                    <div class="sidebar-section-title">Управление</div>
+                    <div class="toggle-container">
+                        <span class="toggle-label">
+                            <span class="icon">&#9998;</span>
+                            Редактирование
+                        </span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="edit-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <button class="btn btn-clear" id="clear-all-btn">&#128465; Очистить всё</button>
+                </div>
+
+                <!-- Section: Войска -->
+                <div class="sidebar-section" style="padding-bottom: 6px;">
+                    <div class="sidebar-section-title">Войска</div>
+                </div>
+                <div id="markers-list">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5 2.5 2.5z"/>
+                        </svg>
+                        <p>Нет войск</p>
+                        <p class="hint">Включите редактирование и кликните на точку</p>
                     </div>
                 </div>
-                <button id="sidebar-close" onclick="toggleSidebar()">×</button>
             </div>
 
-            <!-- Welcome banner -->
-            <div class="welcome-banner" id="welcome-banner"></div>
-
-            <!-- Section: Аккаунт -->
-            <div class="sidebar-section" id="account-section">
-                <div class="sidebar-section-title">Аккаунт</div>
-                <div class="account-card">
-                    <div class="account-avatar" id="account-avatar">👤</div>
-                    <div class="account-details">
-                        <div class="account-name" id="account-name-display"></div>
-                        <div class="account-faction" id="account-faction-display"></div>
-                    </div>
-                </div>
-                <div class="account-stats">
-                    <span class="account-stat" id="account-troop-counter">⚔️ Войска: 0</span>
-                </div>
-                <button class="btn btn-logout" onclick="logout()">🚪 Сменить аккаунт</button>
-            </div>
-
-            <!-- Section: Управление -->
-            <div class="sidebar-section" id="controls-section">
-                <div class="sidebar-section-title">Управление</div>
-                <div class="toggle-container">
-                    <span class="toggle-label">
-                        <span class="icon">&#9998;</span>
-                        Редактирование
-                    </span>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="edit-toggle">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <button class="btn btn-clear" id="clear-all-btn">&#128465; Очистить всё</button>
-            </div>
-
-            <!-- Section: Фракции -->
-            <div class="sidebar-section">
-                <div class="sidebar-section-title">Фракции</div>
-                <div class="legend-grid" id="faction-legend"></div>
-            </div>
-
-            <!-- Section: Войска -->
-            <div class="sidebar-section" style="padding-bottom: 6px;">
-                <div class="sidebar-section-title">Войска</div>
-            </div>
-            <div id="markers-list">
-                <div class="empty-state">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                    </svg>
-                    <p>Нет войск</p>
-                    <p class="hint">Включите редактирование и кликните на точку</p>
-                </div>
-            </div>
+            <div id="map"></div>
         </div>
-
-        <div id="map"></div>
     </div>
 
     <!-- Edit mode indicator -->
@@ -1787,19 +1823,19 @@
         }
 
         function buildFactionLegend() {
-            const container = document.getElementById('faction-legend');
+            const container = document.getElementById('top-faction-bar');
             container.innerHTML = FACTIONS.map(f =>
-                `<div class="legend-item" data-faction="${f.id}" onclick="focusFaction('${f.id}')" style="cursor:pointer;">
-                    <span class="legend-dot" style="background:${f.color};box-shadow:0 0 4px ${f.color};"></span>
+                `<div class="top-faction-item" data-faction="${f.id}" onclick="focusFaction('${f.id}')">
+                    <span class="top-faction-dot" style="background:${f.color};box-shadow:0 0 4px ${f.color};"></span>
                     ${f.name}
                 </div>`
             ).join('');
         }
 
         function focusFaction(factionId) {
-            // Highlight legend
-            document.querySelectorAll('.legend-item').forEach(el => el.classList.remove('active'));
-            const item = document.querySelector(`.legend-item[data-faction="${factionId}"]`);
+            // Highlight top bar items
+            document.querySelectorAll('.top-faction-item').forEach(el => el.classList.remove('active'));
+            const item = document.querySelector(`.top-faction-item[data-faction="${factionId}"]`);
             if (item) item.classList.add('active');
 
             // Find first waypoint of this faction
