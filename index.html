@@ -196,7 +196,7 @@
         #sidebar-close {
             background: rgba(0,0,0,0.2);
             border: none;
-            color: #121518;
+            color: #c9a227;
             width: 32px;
             height: 32px;
             border-radius: 8px;
@@ -206,9 +206,11 @@
             align-items: center;
             justify-content: center;
             transition: background 0.3s ease;
+            z-index: 10;
+            position: relative;
         }
 
-        #sidebar-close:hover { background: rgba(0,0,0,0.4); }
+        #sidebar-close:hover { background: rgba(201, 162, 39, 0.3); }
 
         /* Sidebar sections */
         .sidebar-section {
@@ -1822,10 +1824,8 @@
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const hamburger = document.getElementById('hamburger');
-            const overlay = document.getElementById('sidebar-overlay');
             sidebar.classList.toggle('collapsed');
             hamburger.classList.toggle('hidden', !sidebar.classList.contains('collapsed'));
-            overlay.classList.toggle('active', !sidebar.classList.contains('collapsed'));
         }
 
         // === INIT ===
