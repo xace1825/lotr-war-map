@@ -55,9 +55,80 @@
             flex-shrink: 0;
         }
 
-        /* === SIDEBAR — ANCIENT TOME "Переплёт" === */
+        /* === TOP CONTROL BAR (Account + Edit + Troops Counter) === */
+        #top-control-bar {
+            width: 100%;
+            background: #15131a;
+            border-bottom: 2px solid #4a3320;
+            padding: 6px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 900;
+            flex-wrap: wrap;
+        }
+        #top-control-bar .tb-account {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+            color: #cbbfa3;
+        }
+        #top-control-bar .tb-account .tb-avatar {
+            font-size: 1.2rem;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        #top-control-bar .tb-account .tb-name {
+            font-weight: 700;
+            color: #c9a227;
+        }
+        #top-control-bar .tb-account .tb-faction {
+            font-size: 0.65rem;
+            color: #9a8e7e;
+        }
+        #top-control-bar .tb-divider {
+            width: 1px;
+            height: 24px;
+            background: rgba(201, 162, 39, 0.2);
+            flex-shrink: 0;
+        }
+        #top-control-bar .tb-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+            color: #cbbfa3;
+        }
+        #top-control-bar .tb-btn {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-family: 'Cinzel', serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(201, 162, 39, 0.3);
+            background: transparent;
+            color: #c9a227;
+            flex-shrink: 0;
+        }
+        #top-control-bar .tb-btn:hover {
+            background: rgba(201, 162, 39, 0.1);
+            border-color: #c9a227;
+        }
+        #top-control-bar .tb-counter {
+            font-size: 0.75rem;
+            color: #9a8e7e;
+            margin-left: auto;
+        }
+
+        /* === SIDEBAR — compact troops list === */
         #sidebar {
-            width: 300px;
+            width: 220px;
             background: #15131a;
             background-image:
                 url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
@@ -849,7 +920,7 @@
                 top: 0;
                 bottom: 0;
                 z-index: 1001;
-                width: 280px;
+                width: 220px;
             }
 
             #sidebar.collapsed {
@@ -1381,6 +1452,29 @@
         <!-- Top faction bar -->
         <div id="top-faction-bar"></div>
 
+        <!-- Top control bar (Account + Controls) -->
+        <div id="top-control-bar">
+            <div class="tb-account">
+                <div class="tb-avatar" id="top-avatar">👤</div>
+                <div>
+                    <div class="tb-name" id="top-name"></div>
+                    <div class="tb-faction" id="top-faction"></div>
+                </div>
+            </div>
+            <div class="tb-divider"></div>
+            <div class="tb-toggle">
+                <span style="font-size:0.9rem;">&#9998;</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="edit-toggle">
+                    <span class="slider"></span>
+                </label>
+                <span>Редактирование</span>
+            </div>
+            <button class="tb-btn" id="clear-all-btn">&#128465; Очистить</button>
+            <button class="tb-btn" onclick="logout()">🚪 Выйти</button>
+            <div class="tb-counter" id="top-troop-counter">⚔️ Войска: 0</div>
+        </div>
+
         <div id="main-area">
             <!-- Hamburger button -->
             <button id="hamburger" class="hidden" onclick="toggleSidebar()">&#9776;</button>
@@ -1388,58 +1482,18 @@
             <!-- Sidebar overlay (mobile) -->
             <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-            <!-- Sidebar -->
+            <!-- Sidebar: Troops list only -->
             <div id="sidebar">
                 <div id="sidebar-header">
                     <div class="header-logo">
-                        <span class="header-icon">🗺️</span>
+                        <span class="header-icon">⚔️</span>
                         <div class="header-title">
-                            <h1>Карта Средиземья</h1>
-                            <p>Enchald LOTR Server</p>
+                            <h1>Войска</h1>
                         </div>
                     </div>
                     <button id="sidebar-close" onclick="toggleSidebar()">×</button>
                 </div>
 
-                <!-- Welcome banner -->
-                <div class="welcome-banner" id="welcome-banner"></div>
-
-                <!-- Section: Аккаунт -->
-                <div class="sidebar-section" id="account-section">
-                    <div class="sidebar-section-title">Аккаунт</div>
-                    <div class="account-card">
-                        <div class="account-avatar" id="account-avatar">👤</div>
-                        <div class="account-details">
-                            <div class="account-name" id="account-name-display"></div>
-                            <div class="account-faction" id="account-faction-display"></div>
-                        </div>
-                    </div>
-                    <div class="account-stats">
-                        <span class="account-stat" id="account-troop-counter">⚔️ Войска: 0</span>
-                    </div>
-                    <button class="btn btn-logout" onclick="logout()">🚪 Сменить аккаунт</button>
-                </div>
-
-                <!-- Section: Управление -->
-                <div class="sidebar-section" id="controls-section">
-                    <div class="sidebar-section-title">Управление</div>
-                    <div class="toggle-container">
-                        <span class="toggle-label">
-                            <span class="icon">&#9998;</span>
-                            Редактирование
-                        </span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="edit-toggle">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <button class="btn btn-clear" id="clear-all-btn">&#128465; Очистить всё</button>
-                </div>
-
-                <!-- Section: Войска -->
-                <div class="sidebar-section" style="padding-bottom: 6px;">
-                    <div class="sidebar-section-title">Войска</div>
-                </div>
                 <div id="markers-list">
                     <div class="empty-state">
                         <svg viewBox="0 0 24 24" fill="currentColor">
@@ -1668,10 +1722,10 @@
             const user = getCurrentUser();
             if (!user) return;
 
-            // Account section
-            const nameEl = document.getElementById('account-name-display');
-            const factionEl = document.getElementById('account-faction-display');
-            const avatarEl = document.getElementById('account-avatar');
+            // Top bar: account
+            const nameEl = document.getElementById('top-name');
+            const factionEl = document.getElementById('top-faction');
+            const avatarEl = document.getElementById('top-avatar');
             if (user.isAdmin) {
                 nameEl.textContent = 'Администратор';
                 factionEl.textContent = 'Полный доступ';
@@ -1685,23 +1739,15 @@
 
             updateTroopCounter();
 
-            // Welcome banner
-            const banner = document.getElementById('welcome-banner');
-            if (user.isAdmin) {
-                banner.textContent = 'Привет, Админ!';
-            } else {
-                const faction = FACTIONS.find(f => f.id === user.factionId);
-                banner.textContent = `Привет, ${faction ? faction.name : user.factionId}!`;
-            }
-            banner.classList.add('show');
-
             // Hide/show controls based on role
-            const controlsSection = document.getElementById('controls-section');
+            const topToggle = document.querySelector('.tb-toggle');
+            const clearBtn = document.getElementById('clear-all-btn');
             const limitsPanel = document.getElementById('limits-panel');
 
             if (!user.isAdmin) {
                 // Hide edit toggle and clear button for non-admin
-                controlsSection.style.display = 'none';
+                if (topToggle) topToggle.style.display = 'none';
+                if (clearBtn) clearBtn.style.display = 'none';
                 // Hide limits panel for non-admin
                 limitsPanel.style.display = 'none';
                 // Non-admin always in edit mode
@@ -1709,7 +1755,8 @@
                 window.editMode = true;
             } else {
                 // Admin: show everything, edit mode from toggle
-                controlsSection.style.display = '';
+                if (topToggle) topToggle.style.display = '';
+                if (clearBtn) clearBtn.style.display = '';
                 limitsPanel.style.display = '';
                 editMode = document.getElementById('edit-toggle').checked;
                 window.editMode = editMode;
@@ -1725,7 +1772,7 @@
 
         function updateTroopCounter() {
             const user = getCurrentUser();
-            const counter = document.getElementById('account-troop-counter');
+            const counter = document.getElementById('top-troop-counter');
             if (!user || !counter) return;
             if (user.isAdmin) {
                 counter.textContent = '👑 Админ';
@@ -2135,8 +2182,8 @@
         function getZoomIconSize() {
             if (!map) return BASE_ICON_SIZE;
             const z = map.getZoom();
-            // linear scale: size doubles each zoom step
-            return Math.round(BASE_ICON_SIZE * Math.pow(2, z - 4));
+            // linear: +6px per zoom level
+            return Math.round(BASE_ICON_SIZE + (z - 4) * 6);
         }
 
         function updateZoomIconSize() {
