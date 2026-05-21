@@ -19,95 +19,66 @@
         #app { display: flex; flex-direction: column; height: 100vh; }
         #main-area { display: flex; flex: 1; overflow: hidden; }
 
-        #top-faction-bar {
+        /* === TOP BAR (Controls left + Factions right) === */
+        #top-bar {
             width: 100%;
             background: #15131a;
             border-bottom: 2px solid #4a3320;
-            padding: 8px 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            overflow-x: auto;
-            z-index: 900;
-            scrollbar-width: thin;
-            scrollbar-color: #c9a227 #15131a;
-        }
-        #top-faction-bar::-webkit-scrollbar { height: 4px; }
-        #top-faction-bar::-webkit-scrollbar-thumb { background: #c9a227; border-radius: 4px; }
-        .top-faction-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 0.65rem;
-            color: #9a8e7e;
-            transition: background 0.3s ease;
-            white-space: nowrap;
-            cursor: pointer;
-        }
-        .top-faction-item:hover { background: rgba(201, 162, 39, 0.1); }
-        .top-faction-item.active { background: rgba(201, 162, 39, 0.25); border: 1px solid rgba(201, 162, 39, 0.5); }
-        .top-faction-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        /* === TOP CONTROL BAR (Account + Edit + Troops Counter) === */
-        #top-control-bar {
-            width: 100%;
-            background: #15131a;
-            border-bottom: 2px solid #4a3320;
-            padding: 6px 16px;
+            padding: 6px 12px;
             display: flex;
             align-items: center;
             gap: 12px;
             z-index: 900;
             flex-wrap: wrap;
         }
-        #top-control-bar .tb-account {
+        #top-bar .tb-left {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+        #top-bar .tb-account {
+            display: flex;
+            align-items: center;
+            gap: 6px;
             font-size: 0.75rem;
             color: #cbbfa3;
         }
-        #top-control-bar .tb-account .tb-avatar {
-            font-size: 1.2rem;
-            width: 28px;
-            height: 28px;
+        #top-bar .tb-account .tb-avatar {
+            font-size: 1.1rem;
+            width: 24px;
+            height: 24px;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
         }
-        #top-control-bar .tb-account .tb-name {
+        #top-bar .tb-account .tb-name {
             font-weight: 700;
             color: #c9a227;
+            font-size: 0.75rem;
         }
-        #top-control-bar .tb-account .tb-faction {
-            font-size: 0.65rem;
+        #top-bar .tb-account .tb-faction {
+            font-size: 0.6rem;
             color: #9a8e7e;
         }
-        #top-control-bar .tb-divider {
+        #top-bar .tb-divider {
             width: 1px;
-            height: 24px;
+            height: 20px;
             background: rgba(201, 162, 39, 0.2);
             flex-shrink: 0;
         }
-        #top-control-bar .tb-toggle {
+        #top-bar .tb-toggle {
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 0.75rem;
+            gap: 6px;
+            font-size: 0.7rem;
             color: #cbbfa3;
         }
-        #top-control-bar .tb-btn {
-            padding: 4px 10px;
+        #top-bar .tb-btn {
+            padding: 3px 8px;
             border-radius: 6px;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             font-family: 'Cinzel', serif;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -116,14 +87,40 @@
             color: #c9a227;
             flex-shrink: 0;
         }
-        #top-control-bar .tb-btn:hover {
+        #top-bar .tb-btn:hover {
             background: rgba(201, 162, 39, 0.1);
             border-color: #c9a227;
         }
-        #top-control-bar .tb-counter {
-            font-size: 0.75rem;
+        #top-bar .tb-counter {
+            font-size: 0.7rem;
             color: #9a8e7e;
+        }
+        #top-bar .tb-factions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
             margin-left: auto;
+        }
+        #top-bar .tb-faction-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.6rem;
+            color: #9a8e7e;
+            transition: background 0.3s ease;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        #top-bar .tb-faction-item:hover { background: rgba(201, 162, 39, 0.1); }
+        #top-bar .tb-faction-item.active { background: rgba(201, 162, 39, 0.25); border: 1px solid rgba(201, 162, 39, 0.5); }
+        #top-bar .tb-faction-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
         }
 
         /* === SIDEBAR — compact troops list === */
@@ -1449,30 +1446,30 @@
     </div>
 
     <div id="app" style="display:none;">
-        <!-- Top faction bar -->
-        <div id="top-faction-bar"></div>
-
-        <!-- Top control bar (Account + Controls) -->
-        <div id="top-control-bar">
-            <div class="tb-account">
-                <div class="tb-avatar" id="top-avatar">👤</div>
-                <div>
-                    <div class="tb-name" id="top-name"></div>
-                    <div class="tb-faction" id="top-faction"></div>
+        <!-- Top bar: controls left, factions right -->
+        <div id="top-bar">
+            <div class="tb-left">
+                <div class="tb-account">
+                    <div class="tb-avatar" id="top-avatar">👤</div>
+                    <div>
+                        <div class="tb-name" id="top-name"></div>
+                        <div class="tb-faction" id="top-faction"></div>
+                    </div>
                 </div>
+                <div class="tb-divider"></div>
+                <div class="tb-toggle">
+                    <span style="font-size:0.85rem;">&#9998;</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="edit-toggle">
+                        <span class="slider"></span>
+                    </label>
+                    <span>Редактирование</span>
+                </div>
+                <button class="tb-btn" id="clear-all-btn">&#128465; Очистить</button>
+                <button class="tb-btn" onclick="logout()">🚪 Выйти</button>
+                <div class="tb-counter" id="top-troop-counter">⚔️ Войска: 0</div>
             </div>
-            <div class="tb-divider"></div>
-            <div class="tb-toggle">
-                <span style="font-size:0.9rem;">&#9998;</span>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="edit-toggle">
-                    <span class="slider"></span>
-                </label>
-                <span>Редактирование</span>
-            </div>
-            <button class="tb-btn" id="clear-all-btn">&#128465; Очистить</button>
-            <button class="tb-btn" onclick="logout()">🚪 Выйти</button>
-            <div class="tb-counter" id="top-troop-counter">⚔️ Войска: 0</div>
+            <div class="tb-factions" id="top-factions"></div>
         </div>
 
         <div id="main-area">
@@ -1870,10 +1867,10 @@
         }
 
         function buildFactionLegend() {
-            const container = document.getElementById('top-faction-bar');
+            const container = document.getElementById('top-factions');
             container.innerHTML = FACTIONS.map(f =>
-                `<div class="top-faction-item" data-faction="${f.id}" onclick="focusFaction('${f.id}')">
-                    <span class="top-faction-dot" style="background:${f.color};box-shadow:0 0 4px ${f.color};"></span>
+                `<div class="tb-faction-item" data-faction="${f.id}" onclick="focusFaction('${f.id}')">
+                    <span class="tb-faction-dot" style="background:${f.color};box-shadow:0 0 4px ${f.color};"></span>
                     ${f.name}
                 </div>`
             ).join('');
@@ -1881,8 +1878,8 @@
 
         function focusFaction(factionId) {
             // Highlight top bar items
-            document.querySelectorAll('.top-faction-item').forEach(el => el.classList.remove('active'));
-            const item = document.querySelector(`.top-faction-item[data-faction="${factionId}"]`);
+            document.querySelectorAll('.tb-faction-item').forEach(el => el.classList.remove('active'));
+            const item = document.querySelector(`.tb-faction-item[data-faction="${factionId}"]`);
             if (item) item.classList.add('active');
 
             // Find first waypoint of this faction
