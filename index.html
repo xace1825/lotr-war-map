@@ -744,7 +744,7 @@
 
         #limits-panel {
             position: fixed;
-            top: 16px;
+            bottom: 16px;
             right: 16px;
             background: rgba(22, 27, 34, 0.95);
             border: 1px solid rgba(201, 162, 39, 0.3);
@@ -2437,7 +2437,7 @@
                         );
                         m.on('click', function() {
                             m.unbindPopup();
-                            m.bindPopup(createWaypointPopupContent(wp), {maxWidth: 420});
+                            m.bindPopup(createWaypointPopupContent(wp), {maxWidth: 320});
                             m.openPopup();
                         });
                         m.on('popupopen', function(e) {
