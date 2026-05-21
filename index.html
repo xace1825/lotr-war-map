@@ -2099,8 +2099,8 @@
         function getZoomIconSize() {
             if (!map) return BASE_ICON_SIZE;
             const z = map.getZoom();
-            // linear scale: size doubles each zoom step
-            return Math.round(BASE_ICON_SIZE * Math.pow(2, z - 4));
+            // linear scale: +6px per zoom level above base
+            return Math.round(BASE_ICON_SIZE + (z - 4) * 6);
         }
 
         function updateZoomIconSize() {
