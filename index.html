@@ -511,7 +511,7 @@
             border: 1px solid rgba(201, 162, 39, 0.3);
             color: #c9a227;
             cursor: pointer;
-            display: flex;
+            display: none;
             align-items: center;
             justify-content: center;
             font-size: 1.2rem;
@@ -855,11 +855,14 @@
             position: fixed;
             bottom: 16px;
             right: 16px;
-            background: rgba(22, 27, 34, 0.95);
-            border: 1px solid rgba(201, 162, 39, 0.3);
+            background: rgba(22, 27, 34, 0.98);
+            border: 2px solid rgba(201, 162, 39, 0.5);
             border-radius: 10px;
             z-index: 1500;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            box-shadow:
+                0 8px 32px rgba(0,0,0,0.7),
+                0 0 0 1px rgba(0,0,0,0.5),
+                inset 0 1px 0 rgba(201, 162, 39, 0.1);
             min-width: 220px;
             max-width: 280px;
             backdrop-filter: blur(10px);
@@ -927,7 +930,6 @@
             #sidebar.collapsed {
                 transform: translateX(-100%);
             }
-
             #sidebar-overlay.active { display: block; }
 
             #sidebar-header {
@@ -959,6 +961,64 @@
                 width: 28px;
                 height: 28px;
                 font-size: 0.9rem;
+            }
+
+            #hamburger {
+                display: flex !important;
+            }
+
+            /* Login modal mobile */
+            #login-modal {
+                width: 95vw;
+                padding: 28px 20px;
+                border-radius: 12px;
+            }
+
+            #login-modal h2 {
+                font-size: 1.2rem;
+            }
+
+            /* Faction list on login: 1 column on very narrow screens */
+            @media (max-width: 400px) {
+                #login-factions-list {
+                    grid-template-columns: 1fr !important;
+                }
+            }
+
+            /* Limits panel mobile */
+            #limits-panel {
+                left: 8px;
+                right: 8px;
+                bottom: 8px;
+                min-width: auto;
+                max-width: none;
+                width: auto;
+            }
+
+            /* Faction legend in sidebar: horizontal scroll for many items */
+            .legend-grid {
+                display: flex !important;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                gap: 8px;
+                padding-bottom: 4px;
+                scrollbar-width: thin;
+            }
+
+            .legend-grid::-webkit-scrollbar {
+                height: 3px;
+            }
+
+            .legend-grid::-webkit-scrollbar-thumb {
+                background: #c9a227;
+                border-radius: 3px;
+            }
+
+            .legend-item {
+                flex-shrink: 0;
+                white-space: nowrap;
+                font-size: 0.65rem;
+                padding: 4px 8px;
             }
         }
 
@@ -1801,11 +1861,10 @@
                 // Fill factions list
                 const list = document.getElementById('login-factions-list');
                 if (list) {
-                    const adminItem = '<div style="font-size:0.7rem;color:#c9a227;padding:2px 0;display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#c9a227;flex-shrink:0;"></span>Admin</div>';
                     const items = FACTIONS.map(f => 
                         '<div style="font-size:0.7rem;color:#aaa;padding:2px 0;display:flex;align-items:center;gap:4px;cursor:pointer;" onclick="document.getElementById(\'login-username\').value=\''+f.id+'\';document.getElementById(\'login-password\').value=\''+f.id+'\';"><span style="width:8px;height:8px;border-radius:50%;background:'+f.color+';flex-shrink:0;"></span>'+f.id+'</div>'
                     ).join('');
-                    list.innerHTML = adminItem + items;
+                    list.innerHTML = items;
                 }
                 // Focus username input
                 setTimeout(() => document.getElementById('login-username').focus(), 300);
@@ -1836,6 +1895,11 @@
             setupEventListeners();
             buildFactionLegend();
             renderLimitsList();
+            // Mobile: start with sidebar collapsed + hamburger visible
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.add('collapsed');
+                document.getElementById('hamburger').classList.remove('hidden');
+            }
             checkAuth();
         }
 
